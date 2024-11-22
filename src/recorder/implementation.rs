@@ -114,7 +114,7 @@ impl Recorder {
 
         // Add region selection if needed
         if let CaptureRegion::Selection = self.config.region {
-            cmd.arg("-g");
+            cmd.arg("-g").arg("");
         }
 
         // Start the recording process

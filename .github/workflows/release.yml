@@ -60,7 +60,7 @@ jobs:
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
           chown -R builder:builder .
           
-          # Build package without --locked flag
+          # Build package
           su builder -c 'makepkg -sf --noconfirm'
 
       - name: Upload Release Asset
