@@ -1,9 +1,3 @@
-mod recorder;
+mod implementation;
 
-pub use recorder::{
-    Recorder,
-    RecordingConfig,
-    OutputFormat,
-    AudioSource,
-    CaptureRegion,
-};
+pub use implementation::{AudioSource, CaptureRegion, OutputFormat, Recorder, RecordingConfig};

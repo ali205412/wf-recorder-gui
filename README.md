@@ -1,7 +1,7 @@
 # WF Recorder GUI
 
-[![CI](https://github.com/cline/wf-recorder-gui/actions/workflows/ci.yml/badge.svg)](https://github.com/cline/wf-recorder-gui/actions/workflows/ci.yml)
-[![Release](https://github.com/cline/wf-recorder-gui/actions/workflows/release.yml/badge.svg)](https://github.com/cline/wf-recorder-gui/actions/workflows/release.yml)
+[![CI](https://github.com/ali205412/wf-recorder-gui/actions/workflows/ci.yml/badge.svg)](https://github.com/ali205412/wf-recorder-gui/actions/workflows/ci.yml)
+[![Release](https://github.com/ali205412/wf-recorder-gui/actions/workflows/release.yml/badge.svg)](https://github.com/ali205412/wf-recorder-gui/actions/workflows/release.yml)
 [![AUR version](https://img.shields.io/aur/version/wf-recorder-gui)](https://aur.archlinux.org/packages/wf-recorder-gui/)
 
 A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. Built with GTK4 and Rust, featuring an intuitive interface and efficient workflow.
@@ -15,7 +15,7 @@ A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. B
   - System audio
   - Microphone
   - No audio
-- 📹 Multiple output formats:
+- Multiple output formats:
   - WebM
   - MP4
   - MKV
@@ -25,8 +25,9 @@ A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. B
 
 ## Installation
 
-### Arch Linux (AUR)
+### Arch Linux (Recommended)
 
+Install from AUR:
 ```bash
 yay -S wf-recorder-gui
 ```
@@ -35,35 +36,23 @@ or
 paru -S wf-recorder-gui
 ```
 
-### Debian/Ubuntu
+### Other Distributions
 
-Download the latest .deb package from the [releases page](https://github.com/cline/wf-recorder-gui/releases) and install it:
+Build from source:
+
+1. Install dependencies (package names may vary):
+   - GTK4
+   - libadwaita
+   - wf-recorder
+   - Rust toolchain
+
+2. Build and install:
 ```bash
-sudo dpkg -i wf-recorder-gui_*.deb
-sudo apt-get install -f  # Install dependencies if needed
-```
-
-### Building from Source
-
-Requirements:
-- Rust (1.70.0 or later)
-- GTK4 development files
-- wf-recorder
-
-```bash
-# Install dependencies (Arch Linux)
-sudo pacman -S gtk4 libadwaita wf-recorder base-devel
-
-# Install dependencies (Debian/Ubuntu)
-sudo apt-get install libgtk-4-dev libadwaita-1-dev wf-recorder build-essential
-
-# Clone the repository
-git clone https://github.com/cline/wf-recorder-gui.git
+git clone https://github.com/ali205412/wf-recorder-gui.git
 cd wf-recorder-gui
-
-# Build and run
 cargo build --release
-./target/release/wf-recorder-gui
+sudo install -Dm755 target/release/wf-recorder-gui /usr/bin/wf-recorder-gui
+sudo install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-gui.desktop
 ```
 
 ## Usage
@@ -78,6 +67,14 @@ cargo build --release
 4. Click Stop when finished
 
 ## Development
+
+### Requirements
+
+- Arch Linux (recommended for development)
+- Dependencies:
+```bash
+sudo pacman -S gtk4 libadwaita wf-recorder base-devel rust
+```
 
 ### Project Structure
 
@@ -94,12 +91,12 @@ src/
 
 The project uses GitHub Actions for:
 - Continuous Integration (CI)
-  - Building and testing on each push
+  - Building and testing on Arch Linux
   - Code formatting checks
   - Clippy linting
   - Security audits
 - Release automation
-  - Building Debian packages
+  - Building Arch packages
   - Creating GitHub releases
 - Automated AUR updates
   - Publishing and updating the AUR package
@@ -130,7 +127,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter any issues or have suggestions:
-1. Check the [Issues](https://github.com/cline/wf-recorder-gui/issues) page
+1. Check the [Issues](https://github.com/ali205412/wf-recorder-gui/issues) page
 2. Open a new issue if needed
 3. Provide as much detail as possible:
    - System information

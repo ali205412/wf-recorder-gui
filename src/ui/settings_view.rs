@@ -1,11 +1,11 @@
 use gtk::prelude::*;
-use gtk::{Box, Button, Image, Orientation, FileChooserDialog, FileChooserAction, ResponseType};
-use gtk::{DropDown, StringList, Label};
+use gtk::{Box, Button, FileChooserAction, FileChooserDialog, Image, Orientation, ResponseType};
+use gtk::{DropDown, Label, StringList};
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::path::PathBuf;
+use std::rc::Rc;
 
-use crate::recorder::{OutputFormat, AudioSource, CaptureRegion};
+use crate::recorder::{AudioSource, CaptureRegion, OutputFormat};
 
 #[derive(Clone)]
 pub struct RecordingOptions {
@@ -31,7 +31,6 @@ pub struct SettingsView {
     container: Box,
     record_button: Button,
     options: Rc<RefCell<RecordingOptions>>,
-    dir_label: Label,
 }
 
 impl SettingsView {
@@ -91,8 +90,16 @@ impl SettingsView {
         let screen_buttons = Box::new(Orientation::Horizontal, 12);
         screen_buttons.set_halign(gtk::Align::Fill);
 
-        let screen_btn = Rc::new(create_option_button("display-symbolic", "Full Screen", true));
-        let region_btn = Rc::new(create_option_button("selection-mode-symbolic", "Select Region", false));
+        let screen_btn = Rc::new(create_option_button(
+            "display-symbolic",
+            "Full Screen",
+            true,
+        ));
+        let region_btn = Rc::new(create_option_button(
+            "selection-mode-symbolic",
+            "Select Region",
+            false,
+        ));
 
         screen_buttons.append(screen_btn.as_ref());
         screen_buttons.append(region_btn.as_ref());
@@ -113,9 +120,21 @@ impl SettingsView {
         let audio_buttons = Box::new(Orientation::Horizontal, 12);
         audio_buttons.set_halign(gtk::Align::Fill);
 
-        let audio_btn = Rc::new(create_option_button("audio-volume-high-symbolic", "System Audio", false));
-        let mic_btn = Rc::new(create_option_button("audio-input-microphone-symbolic", "Microphone", false));
-        let mute_btn = Rc::new(create_option_button("audio-volume-muted-symbolic", "No Audio", true));
+        let audio_btn = Rc::new(create_option_button(
+            "audio-volume-high-symbolic",
+            "System Audio",
+            false,
+        ));
+        let mic_btn = Rc::new(create_option_button(
+            "audio-input-microphone-symbolic",
+            "Microphone",
+            false,
+        ));
+        let mute_btn = Rc::new(create_option_button(
+            "audio-volume-muted-symbolic",
+            "No Audio",
+            true,
+        ));
 
         audio_buttons.append(audio_btn.as_ref());
         audio_buttons.append(mic_btn.as_ref());
@@ -138,7 +157,7 @@ impl SettingsView {
         dir_path_box.set_halign(gtk::Align::Fill);
 
         let dir_path_label = Label::builder()
-            .label(&*options.borrow().output_dir.to_string_lossy())
+            .label(options.borrow().output_dir.to_string_lossy().as_ref())
             .halign(gtk::Align::Start)
             .hexpand(true)
             .css_classes(vec!["path-label"])
@@ -156,7 +175,10 @@ impl SettingsView {
                 Some("Choose Save Location"),
                 None::<&gtk::Window>,
                 FileChooserAction::SelectFolder,
-                &[("Cancel", ResponseType::Cancel), ("Select", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Select", ResponseType::Accept),
+                ],
             );
 
             let options = options_clone.clone();
@@ -166,7 +188,7 @@ impl SettingsView {
                     if let Some(file) = dialog.file() {
                         if let Some(path) = file.path() {
                             options.borrow_mut().output_dir = path.clone();
-                            dir_path_label.set_label(&path.to_string_lossy());
+                            dir_path_label.set_label(path.to_string_lossy().as_ref());
                         }
                     }
                 }
@@ -264,7 +286,6 @@ impl SettingsView {
             container,
             record_button,
             options,
-            dir_label: dir_path_label,
         }
     }
 
@@ -286,13 +307,13 @@ fn create_option_button(icon_name: &str, tooltip: &str, active: bool) -> Button 
         .tooltip_text(tooltip)
         .hexpand(true)
         .build();
-    
+
     let icon = Image::from_icon_name(icon_name);
     btn.set_child(Some(&icon));
-    
+
     if active {
         btn.add_css_class("active");
     }
-    
+
     btn
 }

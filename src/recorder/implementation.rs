@@ -1,46 +1,37 @@
-use std::process::{Command, Child};
-use anyhow::{Result, Context};
-use which::which;
+use anyhow::{Context, Result};
 use chrono::Local;
 use std::path::PathBuf;
+use std::process::Command;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OutputFormat {
     WebM,
-    MP4,
-    MKV,
+    Mp4,
+    Mkv,
 }
 
 impl OutputFormat {
     pub fn extension(&self) -> &'static str {
         match self {
             OutputFormat::WebM => "webm",
-            OutputFormat::MP4 => "mp4",
-            OutputFormat::MKV => "mkv",
-        }
-    }
-
-    pub fn description(&self) -> &'static str {
-        match self {
-            OutputFormat::WebM => "WebM - Best for web",
-            OutputFormat::MP4 => "MP4 - Most compatible",
-            OutputFormat::MKV => "MKV - Best quality",
+            OutputFormat::Mp4 => "mp4",
+            OutputFormat::Mkv => "mkv",
         }
     }
 
     pub fn all() -> &'static [(OutputFormat, &'static str)] {
         &[
             (OutputFormat::WebM, "WebM - Best for web"),
-            (OutputFormat::MP4, "MP4 - Most compatible"),
-            (OutputFormat::MKV, "MKV - Best quality"),
+            (OutputFormat::Mp4, "MP4 - Most compatible"),
+            (OutputFormat::Mkv, "MKV - Best quality"),
         ]
     }
 
     fn codec(&self) -> &'static str {
         match self {
             OutputFormat::WebM => "libvpx",
-            OutputFormat::MP4 => "libx264",
-            OutputFormat::MKV => "libx264",
+            OutputFormat::Mp4 => "libx264",
+            OutputFormat::Mkv => "libx264",
         }
     }
 }
@@ -74,22 +65,23 @@ pub struct Recorder {
 
 impl Recorder {
     pub fn new(config: RecordingConfig) -> Self {
-        Self {
-            config,
-            pid: None,
-        }
+        Self { config, pid: None }
     }
 
     fn generate_filename(&self) -> PathBuf {
         let timestamp = Local::now().format("%Y%m%d_%H%M%S");
         let mut path = self.config.output_dir.clone();
-        path.push(format!("recording_{}.{}", timestamp, self.config.format.extension()));
+        path.push(format!(
+            "recording_{}.{}",
+            timestamp,
+            self.config.format.extension()
+        ));
         path
     }
 
     pub fn start(&mut self) -> Result<()> {
         // Ensure wf-recorder is installed
-        which("wf-recorder").context("wf-recorder not found. Please install it first.")?;
+        which::which("wf-recorder").context("wf-recorder not found. Please install it first.")?;
 
         // Build base command
         let mut cmd = Command::new("wf-recorder");
@@ -103,10 +95,10 @@ impl Recorder {
 
         // Add audio configuration
         match self.config.audio {
-            AudioSource::None => {},
+            AudioSource::None => {}
             AudioSource::System => {
                 cmd.arg("-a");
-            },
+            }
             AudioSource::Microphone => {
                 // Get default mic
                 let output = Command::new("pactl")
@@ -134,7 +126,6 @@ impl Recorder {
 
     pub fn stop(&mut self) -> Result<()> {
         if let Some(pid) = self.pid.take() {
-            // Send SIGINT to the specific process ID
             Command::new("kill")
                 .args(["-s", "INT", &pid.to_string()])
                 .spawn()?

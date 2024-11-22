@@ -30,68 +30,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  build-debian:
+  build-package:
     needs: create-release
-    runs-on: ubuntu-22.04
-    container: debian:bullseye
+    runs-on: ubuntu-latest
+    container: 
+      image: archlinux:base-devel
+      options: --privileged
     steps:
       - uses: actions/checkout@v3
+
       - name: Install dependencies
         run: |
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            curl \
-            build-essential \
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
             git \
-            libgtk-4-dev \
-            libadwaita-1-dev \
-            libatk1.0-dev \
-            libcairo2-dev \
-            libgdk-pixbuf2.0-dev \
-            libglib2.0-dev \
-            libpango1.0-dev \
-            pkg-config \
-            wf-recorder \
-            bash
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y
-      - name: Build binary
-        shell: bash
+            rust \
+            cargo \
+            gtk4 \
+            libadwaita \
+            wf-recorder
+
+      - name: Create package
         run: |
-          . "$HOME/.cargo/env"
-          cargo build --release
-      - name: Create DEB package
-        run: |
-          mkdir -p debian/DEBIAN
-          mkdir -p debian/usr/bin
-          mkdir -p debian/usr/share/applications
-          mkdir -p debian/usr/share/icons/hicolor/scalable/apps
-          cp target/release/wf-recorder-gui debian/usr/bin/
-          cat > debian/usr/share/applications/wf-recorder-gui.desktop << EOF
-          [Desktop Entry]
-          Name=WF Recorder GUI
-          Comment=Modern GUI for wf-recorder
-          Exec=wf-recorder-gui
-          Icon=wf-recorder-gui
-          Terminal=false
-          Type=Application
-          Categories=AudioVideo;Video;Recorder;GTK;
-          Keywords=screen;recorder;wayland;capture;
-          EOF
-          cat > debian/DEBIAN/control << EOF
-          Package: wf-recorder-gui
-          Version: ${GITHUB_REF#refs/tags/v}
-          Architecture: amd64
-          Maintainer: Cline <cline@github.com>
-          Description: Modern GUI for wf-recorder
-           A sleek, modern graphical interface for wf-recorder,
-           the Wayland screen recorder.
-          Depends: libgtk-4-1, wf-recorder
-          EOF
-          dpkg-deb --build debian
-          mv debian.deb wf-recorder-gui.deb
+          # Update version in PKGBUILD
+          sed -i "s/pkgver=.*/pkgver=${GITHUB_REF#refs/tags/v}/" PKGBUILD
+          
+          # Create build user
+          useradd builder -m
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder .
+          
+          # Build package without --locked flag
+          su builder -c 'makepkg -sf --noconfirm'
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: wf-recorder-gui.deb
+          files: wf-recorder-gui-*.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ github.token }}

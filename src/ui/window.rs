@@ -3,7 +3,10 @@ use gtk::{glib, Application, ApplicationWindow, Box, Orientation};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::{RecordingState, settings_view::SettingsView, countdown_view::CountdownView, recording_view::RecordingView};
+use super::{
+    countdown_view::CountdownView, recording_view::RecordingView, settings_view::SettingsView,
+    RecordingState,
+};
 use crate::recorder::{Recorder, RecordingConfig};
 
 #[derive(Clone)]
@@ -17,7 +20,7 @@ pub fn build_ui(app: &Application) {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("WF Recorder")
-        .default_width(320)  // Slightly wider for better layout
+        .default_width(320) // Slightly wider for better layout
         .default_height(520) // Taller to accommodate all settings
         .css_classes(vec!["main-window"])
         .build();
@@ -28,7 +31,7 @@ pub fn build_ui(app: &Application) {
     main_box.set_vexpand(true);
     main_box.set_halign(gtk::Align::Fill);
     main_box.set_valign(gtk::Align::Fill);
-    
+
     // Create all views
     let settings_view = SettingsView::new();
     let countdown_view = CountdownView::new();
@@ -42,7 +45,7 @@ pub fn build_ui(app: &Application) {
         recorder: None,
         recording_state: RecordingState::Settings,
     }));
-    
+
     // Store main_box in Rc for sharing
     let main_box = Rc::new(main_box);
 
@@ -55,61 +58,73 @@ pub fn build_ui(app: &Application) {
         let recording_view = recording_view.clone();
         let window_clone = window.clone();
 
-        settings_view.clone().connect_record_clicked(move |options| {
-            let config = RecordingConfig {
-                format: options.format,
-                audio: options.audio,
-                region: options.region,
-                output_dir: options.output_dir,
-            };
+        settings_view
+            .clone()
+            .connect_record_clicked(move |options| {
+                let config = RecordingConfig {
+                    format: options.format,
+                    audio: options.audio,
+                    region: options.region,
+                    output_dir: options.output_dir,
+                };
 
-            state.borrow_mut().recorder = Some(Recorder::new(config));
-            state.borrow_mut().recording_state = RecordingState::Countdown;
+                state.borrow_mut().recorder = Some(Recorder::new(config));
+                state.borrow_mut().recording_state = RecordingState::Countdown;
 
-            let state_clone = state.clone();
-            let main_box_clone = main_box.clone();
-            let settings_view = settings_view.clone();
-            let countdown_view = countdown_view.clone();
-            let recording_view = recording_view.clone();
-            let window = window_clone.clone();
+                let state_clone = state.clone();
+                let main_box_clone = main_box.clone();
+                let settings_view = settings_view.clone();
+                let countdown_view = countdown_view.clone();
+                let recording_view = recording_view.clone();
+                let window = window_clone.clone();
 
-            // Resize for countdown/recording
-            window.set_default_size(200, 100);
-            update_view(&main_box, &RecordingState::Countdown,
-                       &settings_view, &countdown_view, &recording_view);
+                // Resize for countdown/recording
+                window.set_default_size(200, 100);
+                update_view(
+                    &main_box,
+                    &RecordingState::Countdown,
+                    &settings_view,
+                    &countdown_view,
+                    &recording_view,
+                );
 
-            let mut count = 3;
-            countdown_view.set_countdown(count);
+                let mut count = 3;
+                countdown_view.set_countdown(count);
 
-            glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
-                if count > 0 {
-                    count -= 1;
-                    countdown_view.set_countdown(count);
-                    glib::ControlFlow::Continue
-                } else {
-                    let mut state = state_clone.borrow_mut();
-                    if let Some(recorder) = state.recorder.as_mut() {
-                        if let Err(e) = recorder.start() {
-                            eprintln!("Failed to start recording: {}", e);
-                            state.recorder = None;
-                            state.recording_state = RecordingState::Settings;
-                            window.set_default_size(320, 520);
-                        } else {
-                            state.recording_state = RecordingState::Recording;
+                glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
+                    if count > 0 {
+                        count -= 1;
+                        countdown_view.set_countdown(count);
+                        glib::ControlFlow::Continue
+                    } else {
+                        let mut state = state_clone.borrow_mut();
+                        if let Some(recorder) = state.recorder.as_mut() {
+                            if let Err(e) = recorder.start() {
+                                eprintln!("Failed to start recording: {}", e);
+                                state.recorder = None;
+                                state.recording_state = RecordingState::Settings;
+                                window.set_default_size(320, 520);
+                            } else {
+                                state.recording_state = RecordingState::Recording;
+                            }
                         }
-                    }
 
-                    update_view(&main_box_clone, &state.recording_state,
-                              &settings_view, &countdown_view, &recording_view);
+                        update_view(
+                            &main_box_clone,
+                            &state.recording_state,
+                            &settings_view,
+                            &countdown_view,
+                            &recording_view,
+                        );
 
-                    if state.recording_state == RecordingState::Recording {
-                        start_recording_timer(&recording_view);
+                        if state.recording_state == RecordingState::Recording {
+                            start_recording_timer(&recording_view);
+                        }
+
+                        glib::ControlFlow::Break
                     }
-                    
-                    glib::ControlFlow::Break
-                }
+                });
             });
-        });
     }
 
     {
@@ -125,8 +140,13 @@ pub fn build_ui(app: &Application) {
             state.recorder = None;
             state.recording_state = RecordingState::Settings;
             window_clone.set_default_size(320, 520);
-            update_view(&main_box, &state.recording_state,
-                       &settings_view, &countdown_view, &recording_view);
+            update_view(
+                &main_box,
+                &state.recording_state,
+                &settings_view,
+                &countdown_view,
+                &recording_view,
+            );
         });
     }
 
@@ -146,8 +166,13 @@ pub fn build_ui(app: &Application) {
             state.recorder = None;
             state.recording_state = RecordingState::Settings;
             window_clone.set_default_size(320, 520);
-            update_view(&main_box, &state.recording_state,
-                       &settings_view, &countdown_view, &recording_view);
+            update_view(
+                &main_box,
+                &state.recording_state,
+                &settings_view,
+                &countdown_view,
+                &recording_view,
+            );
         });
     }
 
@@ -156,10 +181,10 @@ pub fn build_ui(app: &Application) {
 
     // Load CSS styling
     load_css();
-    
+
     // Set minimum window size
     window.set_size_request(200, 100);
-    
+
     window.present();
 }
 
@@ -186,7 +211,7 @@ fn update_view(
 fn start_recording_timer(recording_view: &RecordingView) {
     let recording_view = recording_view.clone();
     let mut seconds = 0;
-    
+
     glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
         seconds += 1;
         recording_view.update_time(seconds);
@@ -197,7 +222,7 @@ fn start_recording_timer(recording_view: &RecordingView) {
 fn load_css() {
     let provider = gtk::CssProvider::new();
     provider.load_from_data(include_str!("../../assets/style.css"));
-    
+
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().expect("Could not connect to display"),
         &provider,
