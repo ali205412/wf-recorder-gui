@@ -1,0 +1,33 @@
+# Rust build artifacts
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.deb
+*.pkg.tar.zst
+*.tar.gz
+*.tar.xz
+
+# Debian package build directory
+debian/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test coverage
+coverage/
+*.profraw

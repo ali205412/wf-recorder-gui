@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=WF Recorder GUI
+Comment=Modern GUI for wf-recorder screen recorder
+Exec=wf-recorder-gui
+Icon=camera-video-symbolic
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;Recorder;GTK;
+Keywords=screen;recorder;wayland;capture;
+StartupNotify=true

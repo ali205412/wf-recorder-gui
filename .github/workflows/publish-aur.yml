@@ -1,0 +1,57 @@
+name: Publish AUR package
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aur-publish:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            git \
+            openssh \
+            rust \
+            gtk4 \
+            libadwaita \
+            wf-recorder
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update PKGBUILD
+        run: |
+          # Update version in PKGBUILD
+          sed -i "s/pkgver=.*/pkgver=${GITHUB_REF#refs/tags/v}/" PKGBUILD
+
+      - name: Generate .SRCINFO
+        run: |
+          useradd builder -m
+          chown -R builder:builder .
+          su builder -c "makepkg --printsrcinfo > .SRCINFO"
+
+      - name: Deploy to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v2.7.0
+        with:
+          pkgname: wf-recorder-gui
+          pkgbuild: ./PKGBUILD
+          commit_username: "GitHub Action"
+          commit_email: "actions@github.com"
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to version ${{ steps.get_version.outputs.version }}"
+          ssh_keyscan_types: ed25519
+          force_push: true

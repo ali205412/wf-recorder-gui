@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            libatk1.0-dev \
+            libcairo2-dev \
+            libgdk-pixbuf2.0-dev \
+            libglib2.0-dev \
+            libpango1.0-dev \
+            pkg-config \
+            wf-recorder
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --verbose
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            libatk1.0-dev \
+            libcairo2-dev \
+            libgdk-pixbuf2.0-dev \
+            libglib2.0-dev \
+            libpango1.0-dev \
+            pkg-config \
+            wf-recorder
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  security_audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            libatk1.0-dev \
+            libcairo2-dev \
+            libgdk-pixbuf2.0-dev \
+            libglib2.0-dev \
+            libpango1.0-dev \
+            pkg-config \
+            wf-recorder
+      
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Run security audit
+        run: cargo audit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
