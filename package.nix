@@ -52,11 +52,11 @@ rustPlatform.buildRustPackage rec {
 
   desktopEntry = [
     (makeDesktopItem {
-      name = "WF Recorder GUI";
-			comment = "Modern GUI for wf-recorder screen recorder";
+      name = "WF-Recorder-GUI";
+      comment = "Modern GUI for wf-recorder screen recorder";
       exec = "wf-recorder-gui";
       icon = "camera-video-symbolic";
-			desktopName = "WF-Recorder-GUI";
+      desktopName = "WF Recorder GUI";
       terminal = false;
       type = "Application";
       categories = [ "AudioVideo" "Video" "Recorder" "GTK" ];
@@ -64,6 +64,13 @@ rustPlatform.buildRustPackage rec {
       startupNotify = true;
     })
   ];
+
+  postInstall = ''
+    mkdir -p $out/share/applications
+    for entry in ${toString desktopEntry}; do
+      cp $entry/share/applications/*.desktop $out/share/applications/
+    done
+  '';
 
   meta = with lib; {
     description = "wf-recorder GUI (GTK)";
