@@ -10,23 +10,39 @@ pub struct RecordingView {
 
 impl RecordingView {
     pub fn new() -> Self {
-        let container = Box::new(Orientation::Horizontal, 12);
-        container.set_margin_start(12);
-        container.set_margin_end(12);
-        container.set_margin_top(12);
-        container.set_margin_bottom(12);
+        let container = Box::new(Orientation::Vertical, 2);
+        container.set_margin_start(6);
+        container.set_margin_end(6);
+        container.set_margin_top(4);
+        container.set_margin_bottom(4);
+        container.set_halign(gtk::Align::Fill);
+        container.set_valign(gtk::Align::Center);
         container.add_css_class("recording-view");
 
+        // Title
+        let title = Label::builder()
+            .label("Recording")
+            .css_classes(vec!["recording-title"])
+            .halign(gtk::Align::Center)
+            .margin_bottom(2)
+            .build();
+
+        // Time label
         let time_label = Label::builder()
             .label("00:00")
             .css_classes(vec!["time-label"])
+            .halign(gtk::Align::Center)
+            .margin_bottom(2)
             .build();
 
+        // Stop button
         let stop_button = Button::builder()
             .label("Stop")
             .css_classes(vec!["stop-button"])
+            .halign(gtk::Align::Fill)
             .build();
 
+        container.append(&title);
         container.append(&time_label);
         container.append(&stop_button);
 

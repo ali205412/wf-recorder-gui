@@ -10,28 +10,39 @@ pub struct CountdownView {
 
 impl CountdownView {
     pub fn new() -> Self {
-        let container = Box::new(Orientation::Horizontal, 8);
-        container.set_margin_start(8);
-        container.set_margin_end(8);
-        container.set_margin_top(8);
-        container.set_margin_bottom(8);
-        container.add_css_class("countdown-view");
+        let container = Box::new(Orientation::Vertical, 2);
+        container.set_margin_start(6);
+        container.set_margin_end(6);
+        container.set_margin_top(4);
+        container.set_margin_bottom(4);
+        container.set_halign(gtk::Align::Fill);
         container.set_valign(gtk::Align::Center);
-        container.set_halign(gtk::Align::Center);
+        container.add_css_class("countdown-view");
+
+        // Title
+        let title = Label::builder()
+            .label("Recording in...")
+            .css_classes(vec!["countdown-title"])
+            .halign(gtk::Align::Center)
+            .margin_bottom(2)
+            .build();
 
         // Countdown number
         let countdown_label = Label::builder()
             .label("3")
             .css_classes(vec!["countdown-number"])
+            .halign(gtk::Align::Center)
+            .margin_bottom(2)
             .build();
 
         // Cancel button
         let cancel_button = Button::builder()
             .label("Cancel")
-            .css_classes(vec!["destructive-action", "cancel-button"])
+            .css_classes(vec!["cancel-button"])
+            .halign(gtk::Align::Fill)
             .build();
 
-        // Add elements with proper spacing
+        container.append(&title);
         container.append(&countdown_label);
         container.append(&cancel_button);
 

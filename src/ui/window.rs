@@ -20,14 +20,15 @@ pub fn build_ui(app: &Application) {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("WF Recorder")
-        .default_width(320)
-        .default_height(520)
+        .resizable(false)
         .css_classes(vec!["main-window"])
+        .default_width(180)
+        .default_height(320)
         .build();
 
     let main_box = Box::new(Orientation::Vertical, 0);
-    main_box.set_hexpand(true);
-    main_box.set_vexpand(true);
+    main_box.set_hexpand(false);
+    main_box.set_vexpand(false);
     main_box.set_halign(gtk::Align::Fill);
     main_box.set_valign(gtk::Align::Fill);
 
@@ -81,10 +82,10 @@ pub fn build_ui(app: &Application) {
                 let settings_view = settings_view.clone();
                 let countdown_view = countdown_view.clone();
                 let recording_view = recording_view.clone();
-                let window = window_clone.clone();
                 let timer_id = timer_id.clone();
+                let window = window_clone.clone();
 
-                window.set_default_size(200, 100);
+                window.set_default_size(180, 120);
                 update_view(
                     &main_box,
                     &RecordingState::Countdown,
@@ -115,7 +116,7 @@ pub fn build_ui(app: &Application) {
                                 eprintln!("Failed to start recording: {}", e);
                                 state.recorder = None;
                                 state.recording_state = RecordingState::Settings;
-                                window.set_default_size(320, 520);
+                                window.set_default_size(180, 320);
                             } else {
                                 state.recording_state = RecordingState::Recording;
                                 state.timer_running.set(true);
@@ -132,7 +133,8 @@ pub fn build_ui(app: &Application) {
 
                         if state.recording_state == RecordingState::Recording {
                             // Start new timer
-                            let id = start_recording_timer(&recording_view, state.timer_running.clone());
+                            let id =
+                                start_recording_timer(&recording_view, state.timer_running.clone());
                             *timer_id.borrow_mut() = Some(id);
                         }
 
@@ -159,7 +161,7 @@ pub fn build_ui(app: &Application) {
                 id.remove();
             }
             recording_view.reset_time();
-            window_clone.set_default_size(320, 520);
+            window_clone.set_default_size(180, 320);
             update_view(
                 &main_box,
                 &state.recording_state,
@@ -191,7 +193,7 @@ pub fn build_ui(app: &Application) {
                 id.remove();
             }
             recording_view.reset_time();
-            window_clone.set_default_size(320, 520);
+            window_clone.set_default_size(180, 320);
             update_view(
                 &main_box,
                 &state.recording_state,
@@ -204,7 +206,6 @@ pub fn build_ui(app: &Application) {
 
     window.set_child(Some(main_box.as_ref()));
     load_css();
-    window.set_size_request(200, 100);
     window.present();
 }
 
@@ -226,7 +227,10 @@ fn update_view(
     }
 }
 
-fn start_recording_timer(recording_view: &RecordingView, is_running: Rc<Cell<bool>>) -> glib::SourceId {
+fn start_recording_timer(
+    recording_view: &RecordingView,
+    is_running: Rc<Cell<bool>>,
+) -> glib::SourceId {
     let recording_view = recording_view.clone();
     let seconds = Rc::new(RefCell::new(0u32));
 

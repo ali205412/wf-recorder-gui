@@ -1,256 +1,213 @@
 /* Modern, minimal theme */
 .main-window {
-    background: #0f0f13;
+    background: #ffffff;
+    border-radius: 12px;
 }
 
 /* Settings View */
 .settings-view {
-    background: #0f0f13;
-    border-radius: 16px;
+    background: #ffffff;
+    padding: 6px;
 }
 
-.setting-label {
-    color: #565f89;
-    font-size: 13px;
+.window-title {
+    font-size: 15px;
     font-weight: 500;
-    margin-bottom: 4px;
-    letter-spacing: 0.3px;
+    color: #000000;
+    margin-bottom: 0;
+    text-align: center;
 }
 
-.path-label {
-    color: #c0caf5;
-    font-size: 13px;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    font-family: monospace;
-    margin: 2px 0;
-    transition: all 200ms ease;
+.window-subtitle {
+    font-size: 12px;
+    color: #666666;
+    margin-bottom: 6px;
+    text-align: center;
 }
 
 .format-dropdown {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #f5f5f5;
+    border: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 8px;
-    color: #c0caf5;
-    padding: 10px 12px;
-    margin: 2px 0;
+    color: #333333;
     font-size: 13px;
+    padding: 6px 10px;
+    margin: 0;
 }
 
 .format-dropdown:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: #f0f0f0;
 }
 
-.format-dropdown:focus {
-    border-color: #7aa2f7;
+.option-grid {
+    margin: 0;
+    max-width: 180px;
 }
 
-popover.menu {
-    background: #1a1b26;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 4px;
+.dynamic-grid {
+    min-width: 0;
+    min-height: 0;
 }
 
-popover.menu list {
-    background: transparent;
-    border-radius: 6px;
-}
-
-popover.menu list row {
-    padding: 8px 12px;
-    border-radius: 4px;
-    margin: 2px;
-    color: #c0caf5;
-    font-size: 13px;
-}
-
-popover.menu list row:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-popover.menu list row:selected {
-    background: rgba(130, 170, 255, 0.15);
+.option-grid flowboxchild {
+    padding: 0;
 }
 
 .option-button {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 12px;
-    min-width: 48px;
-    min-height: 48px;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 6px;
+    margin: 1px;
+    transition: all 150ms ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .option-button:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
+    background: #fafafa;
 }
 
 .option-button.active {
-    background: rgba(130, 170, 255, 0.15);
-    border-color: #7aa2f7;
-}
-
-.option-button.active:hover {
-    background: rgba(130, 170, 255, 0.2);
+    background: #f0f7ff;
+    border-color: rgba(33, 150, 243, 0.1);
 }
 
 .option-button image {
-    color: #a9b1d6;
-    -gtk-icon-size: small;
-    transition: all 200ms ease;
-}
-
-.option-button:hover image {
-    color: #c0caf5;
+    color: #666666;
+    -gtk-icon-size: 18px;
+    margin-bottom: 4px;
 }
 
 .option-button.active image {
-    color: #7aa2f7;
+    color: #2196f3;
 }
 
-.folder-button {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 8px 16px;
-    color: #7aa2f7;
-    font-size: 13px;
-    font-weight: 500;
-    min-width: 80px;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+.option-label {
+    font-size: 11px;
+    line-height: 1;
+    color: #666666;
+    margin: 0;
+    padding: 0;
+    text-align: center;
 }
 
-.folder-button:hover {
-    background: rgba(130, 170, 255, 0.1);
-    border-color: rgba(122, 162, 247, 0.3);
-    transform: translateY(-1px);
+.option-button.active .option-label {
+    color: #2196f3;
+}
+
+.path-label {
+    font-size: 12px;
+    color: #666666;
+    background: #f5f5f5;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.path-button {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #f5f5f5;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.path-button:hover {
+    background: #f0f0f0;
 }
 
 .record-button {
-    background: #7aa2f7;
+    background: #0d8af5;
     border: none;
     border-radius: 8px;
-    color: #1a1b26;
-    padding: 12px 24px;
+    color: white;
+    padding: 8px;
     font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    margin-top: 6px;
+    transition: all 150ms ease;
 }
 
 .record-button:hover {
-    background: #89b4ff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(122, 162, 247, 0.3);
+    background: #0b7de3;
 }
 
 /* Recording View */
 .recording-view {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 12px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.recording-title {
+    font-size: 14px;
+    color: #333333;
+    margin-bottom: 4px;
+    text-align: center;
 }
 
 .time-label {
-    color: #ff7eb6;
-    font-size: 20px;
-    font-weight: 600;
-    min-width: 70px;
+    color: #ff0000;
+    font-size: 42px;
+    font-weight: 400;
+    font-family: monospace;
+    margin: 4px 0;
     text-align: center;
-    font-feature-settings: "tnum";
-    letter-spacing: 0.5px;
 }
 
 .stop-button {
-    background: #ff7eb6;
+    background: #ff0000;
     border: none;
-    border-radius: 6px;
-    color: #1a1b26;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    color: white;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 4px;
+    transition: all 150ms ease;
 }
 
 .stop-button:hover {
-    background: #ff8fc1;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 126, 182, 0.3);
+    background: #e60000;
 }
 
 /* Countdown View */
 .countdown-view {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 12px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.countdown-title {
+    font-size: 14px;
+    color: #333333;
+    margin-bottom: 4px;
+    text-align: center;
 }
 
 .countdown-number {
-    color: #c0caf5;
-    font-size: 24px;
-    font-weight: 600;
-    min-width: 40px;
+    color: #333333;
+    font-size: 48px;
+    font-weight: 400;
+    margin: 4px 0;
     text-align: center;
 }
 
 .cancel-button {
-    background: #ff7eb6;
+    background: #ff0000;
     border: none;
-    border-radius: 6px;
-    color: #1a1b26;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    color: white;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 4px;
+    transition: all 150ms ease;
 }
 
 .cancel-button:hover {
-    background: #ff8fc1;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 126, 182, 0.3);
-}
-
-/* File chooser dialog */
-filechooser {
-    background: #0f0f13;
-    color: #c0caf5;
-}
-
-filechooser button {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    padding: 8px 16px;
-    color: #c0caf5;
-    transition: all 200ms ease;
-}
-
-filechooser button:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Tooltips */
-tooltip {
-    background: #1a1b26;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-}
-
-tooltip label {
-    color: #c0caf5;
-    font-size: 12px;
-    padding: 6px 10px;
-    font-weight: 500;
+    background: #e60000;
 }

@@ -1,6 +1,8 @@
 use gtk::prelude::*;
-use gtk::{Box, Button, FileChooserAction, FileChooserDialog, Image, Orientation, ResponseType};
-use gtk::{DropDown, Label, StringList};
+use gtk::{
+    Box, Button, DropDown, FileChooserAction, FileChooserDialog, FlowBox, Image, Label,
+    Orientation, ResponseType, StringList,
+};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -18,7 +20,7 @@ pub struct RecordingOptions {
 impl Default for RecordingOptions {
     fn default() -> Self {
         Self {
-            format: OutputFormat::WebM,
+            format: OutputFormat::Mp4,
             audio: AudioSource::None,
             region: CaptureRegion::FullScreen,
             output_dir: std::env::temp_dir(),
@@ -41,21 +43,127 @@ impl SettingsView {
         let options = Rc::new(RefCell::new(RecordingOptions::default()));
 
         // Main content box with padding
-        let content = Box::new(Orientation::Vertical, 20);
-        content.set_margin_start(24);
-        content.set_margin_end(24);
-        content.set_margin_top(24);
-        content.set_margin_bottom(24);
+        let content = Box::new(Orientation::Vertical, 4);
+        content.set_margin_start(6);
+        content.set_margin_end(6);
+        content.set_margin_top(6);
+        content.set_margin_bottom(6);
 
-        // Format selection dropdown
-        let format_box = Box::new(Orientation::Vertical, 8);
-        format_box.set_halign(gtk::Align::Fill);
-
-        let format_label = Label::builder()
-            .label("Format")
-            .halign(gtk::Align::Start)
-            .css_classes(vec!["setting-label"])
+        // Title and subtitle
+        let title = Label::builder()
+            .label("Normal")
+            .css_classes(vec!["window-title"])
             .build();
+
+        let subtitle = Label::builder()
+            .label("MP4 • 30FPS")
+            .css_classes(vec!["window-subtitle"])
+            .build();
+
+        content.append(&title);
+        content.append(&subtitle);
+
+        // FlowBox for options
+        let flow_box = FlowBox::builder()
+            .homogeneous(true)
+            .row_spacing(2)
+            .column_spacing(2)
+            .selection_mode(gtk::SelectionMode::None)
+            .halign(gtk::Align::Center)
+            .hexpand(false)
+            .css_classes(vec!["option-grid", "dynamic-grid"])
+            .build();
+
+        // Screen selection buttons
+        let screen_box = Box::new(Orientation::Vertical, 0);
+        let screen_icon = Image::from_icon_name("display-symbolic");
+        let screen_label = Label::builder()
+            .label("Screen")
+            .css_classes(vec!["option-label"])
+            .build();
+        screen_box.append(&screen_icon);
+        screen_box.append(&screen_label);
+
+        let screen_btn = Button::builder()
+            .css_classes(vec!["option-button", "active"])
+            .tooltip_text("Full Screen")
+            .child(&screen_box)
+            .build();
+
+        let region_box = Box::new(Orientation::Vertical, 0);
+        let region_icon = Image::from_icon_name("selection-mode-symbolic");
+        let region_label = Label::builder()
+            .label("Region")
+            .css_classes(vec!["option-label"])
+            .build();
+        region_box.append(&region_icon);
+        region_box.append(&region_label);
+
+        let region_btn = Button::builder()
+            .css_classes(vec!["option-button"])
+            .tooltip_text("Select Region")
+            .child(&region_box)
+            .build();
+
+        flow_box.insert(&screen_btn, -1);
+        flow_box.insert(&region_btn, -1);
+
+        // Audio options
+        let audio_box = Box::new(Orientation::Vertical, 0);
+        let audio_icon = Image::from_icon_name("audio-volume-high-symbolic");
+        let audio_label = Label::builder()
+            .label("System")
+            .css_classes(vec!["option-label"])
+            .build();
+        audio_box.append(&audio_icon);
+        audio_box.append(&audio_label);
+
+        let audio_btn = Button::builder()
+            .css_classes(vec!["option-button"])
+            .tooltip_text("System Audio")
+            .child(&audio_box)
+            .build();
+
+        let mic_box = Box::new(Orientation::Vertical, 0);
+        let mic_icon = Image::from_icon_name("audio-input-microphone-symbolic");
+        let mic_label = Label::builder()
+            .label("Mic")
+            .css_classes(vec!["option-label"])
+            .build();
+        mic_box.append(&mic_icon);
+        mic_box.append(&mic_label);
+
+        let mic_btn = Button::builder()
+            .css_classes(vec!["option-button"])
+            .tooltip_text("Microphone")
+            .child(&mic_box)
+            .build();
+
+        flow_box.insert(&audio_btn, -1);
+        flow_box.insert(&mic_btn, -1);
+
+        // Mute button
+        let mute_box = Box::new(Orientation::Vertical, 0);
+        let mute_icon = Image::from_icon_name("audio-volume-muted-symbolic");
+        let mute_label = Label::builder()
+            .label("Mute")
+            .css_classes(vec!["option-label"])
+            .build();
+        mute_box.append(&mute_icon);
+        mute_box.append(&mute_label);
+
+        let mute_btn = Button::builder()
+            .css_classes(vec!["option-button", "active"])
+            .tooltip_text("No Audio")
+            .child(&mute_box)
+            .build();
+
+        flow_box.insert(&mute_btn, -1);
+
+        // Format selector
+        let format_box = Box::new(Orientation::Horizontal, 4);
+        format_box.set_halign(gtk::Align::Fill);
+        format_box.set_margin_top(6);
 
         let format_model = StringList::new(&[]);
         for (_, desc) in OutputFormat::all() {
@@ -64,115 +172,50 @@ impl SettingsView {
 
         let format_dropdown = DropDown::builder()
             .model(&format_model)
+            .selected(1) // MP4 by default
             .css_classes(vec!["format-dropdown"])
             .build();
 
+        let subtitle_clone = subtitle.clone();
         let options_clone = options.clone();
         format_dropdown.connect_selected_notify(move |dropdown| {
             let idx = dropdown.selected();
             let format = OutputFormat::all()[idx as usize].0;
             options_clone.borrow_mut().format = format;
+
+            let format_text = match format {
+                OutputFormat::WebM => "WebM • 30FPS",
+                OutputFormat::Mp4 => "MP4 • 30FPS",
+                OutputFormat::Mkv => "MKV • 30FPS",
+            };
+            subtitle_clone.set_text(format_text);
         });
 
-        format_box.append(&format_label);
         format_box.append(&format_dropdown);
 
-        // Screen selection buttons
-        let screen_box = Box::new(Orientation::Vertical, 8);
-        screen_box.set_halign(gtk::Align::Fill);
+        // Output directory selector
+        let path_box = Box::new(Orientation::Horizontal, 4);
+        path_box.set_halign(gtk::Align::Fill);
+        path_box.set_margin_top(6);
+        path_box.set_spacing(4);
 
-        let screen_label = Label::builder()
-            .label("Capture Mode")
-            .halign(gtk::Align::Start)
-            .css_classes(vec!["setting-label"])
-            .build();
-
-        let screen_buttons = Box::new(Orientation::Horizontal, 12);
-        screen_buttons.set_halign(gtk::Align::Fill);
-
-        let screen_btn = Rc::new(create_option_button(
-            "display-symbolic",
-            "Full Screen",
-            true,
-        ));
-        let region_btn = Rc::new(create_option_button(
-            "selection-mode-symbolic",
-            "Select Region",
-            false,
-        ));
-
-        screen_buttons.append(screen_btn.as_ref());
-        screen_buttons.append(region_btn.as_ref());
-
-        screen_box.append(&screen_label);
-        screen_box.append(&screen_buttons);
-
-        // Audio options
-        let audio_box = Box::new(Orientation::Vertical, 8);
-        audio_box.set_halign(gtk::Align::Fill);
-
-        let audio_label = Label::builder()
-            .label("Audio Source")
-            .halign(gtk::Align::Start)
-            .css_classes(vec!["setting-label"])
-            .build();
-
-        let audio_buttons = Box::new(Orientation::Horizontal, 12);
-        audio_buttons.set_halign(gtk::Align::Fill);
-
-        let audio_btn = Rc::new(create_option_button(
-            "audio-volume-high-symbolic",
-            "System Audio",
-            false,
-        ));
-        let mic_btn = Rc::new(create_option_button(
-            "audio-input-microphone-symbolic",
-            "Microphone",
-            false,
-        ));
-        let mute_btn = Rc::new(create_option_button(
-            "audio-volume-muted-symbolic",
-            "No Audio",
-            true,
-        ));
-
-        audio_buttons.append(audio_btn.as_ref());
-        audio_buttons.append(mic_btn.as_ref());
-        audio_buttons.append(mute_btn.as_ref());
-
-        audio_box.append(&audio_label);
-        audio_box.append(&audio_buttons);
-
-        // Output directory selection
-        let dir_box = Box::new(Orientation::Vertical, 8);
-        dir_box.set_halign(gtk::Align::Fill);
-
-        let dir_label = Label::builder()
-            .label("Save Location")
-            .halign(gtk::Align::Start)
-            .css_classes(vec!["setting-label"])
-            .build();
-
-        let dir_path_box = Box::new(Orientation::Horizontal, 8);
-        dir_path_box.set_halign(gtk::Align::Fill);
-
-        let dir_path_label = Label::builder()
-            .label(options.borrow().output_dir.to_string_lossy().as_ref())
+        let path_label = Label::builder()
+            .label(&options.borrow().output_dir.to_string_lossy().to_string())
             .halign(gtk::Align::Start)
             .hexpand(true)
             .css_classes(vec!["path-label"])
             .build();
 
-        let dir_btn = Button::builder()
-            .label("Choose")
-            .css_classes(vec!["folder-button"])
+        let path_btn = Button::builder()
+            .label("Browse...")
+            .css_classes(vec!["path-button"])
             .build();
 
         let options_clone = options.clone();
-        let dir_path_label_clone = dir_path_label.clone();
-        dir_btn.connect_clicked(move |_| {
+        let path_label_clone = path_label.clone();
+        path_btn.connect_clicked(move |_| {
             let dialog = FileChooserDialog::new(
-                Some("Choose Save Location"),
+                Some("Choose Output Directory"),
                 None::<&gtk::Window>,
                 FileChooserAction::SelectFolder,
                 &[
@@ -181,34 +224,35 @@ impl SettingsView {
                 ],
             );
 
+            let _ = dialog.set_current_folder(Some(&gio::File::for_path(
+                &options_clone.borrow().output_dir,
+            )));
+
             let options = options_clone.clone();
-            let dir_path_label = dir_path_label_clone.clone();
+            let path_label = path_label_clone.clone();
             dialog.connect_response(move |dialog, response| {
                 if response == ResponseType::Accept {
-                    if let Some(file) = dialog.file() {
-                        if let Some(path) = file.path() {
+                    if let Some(folder) = dialog.file() {
+                        if let Some(path) = folder.path() {
+                            path_label.set_text(&path.to_string_lossy().to_string());
                             options.borrow_mut().output_dir = path.clone();
-                            dir_path_label.set_label(path.to_string_lossy().as_ref());
                         }
                     }
+                    dialog.close();
                 }
-                dialog.close();
             });
 
             dialog.show();
         });
 
-        dir_path_box.append(&dir_path_label);
-        dir_path_box.append(&dir_btn);
-
-        dir_box.append(&dir_label);
-        dir_box.append(&dir_path_box);
+        path_box.append(&path_label);
+        path_box.append(&path_btn);
 
         // Record button
         let record_button = Button::builder()
             .label("Record")
             .css_classes(vec!["record-button"])
-            .margin_top(32)
+            .margin_top(6)
             .build();
 
         // Connect signals
@@ -274,10 +318,9 @@ impl SettingsView {
         }
 
         // Add all sections
+        content.append(&flow_box);
         content.append(&format_box);
-        content.append(&screen_box);
-        content.append(&audio_box);
-        content.append(&dir_box);
+        content.append(&path_box);
         content.append(&record_button);
 
         container.append(&content);
@@ -299,21 +342,4 @@ impl SettingsView {
             f(options.borrow().clone());
         });
     }
-}
-
-fn create_option_button(icon_name: &str, tooltip: &str, active: bool) -> Button {
-    let btn = Button::builder()
-        .css_classes(vec!["option-button"])
-        .tooltip_text(tooltip)
-        .hexpand(true)
-        .build();
-
-    let icon = Image::from_icon_name(icon_name);
-    btn.set_child(Some(&icon));
-
-    if active {
-        btn.add_css_class("active");
-    }
-
-    btn
 }
