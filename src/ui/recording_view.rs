@@ -44,7 +44,8 @@ impl RecordingView {
     pub fn update_time(&self, seconds: u32) {
         let minutes = seconds / 60;
         let seconds = seconds % 60;
-        self.time_label.set_text(&format!("{:02}:{:02}", minutes, seconds));
+        self.time_label
+            .set_text(&format!("{:02}:{:02}", minutes, seconds));
     }
 
     pub fn reset_time(&self) {

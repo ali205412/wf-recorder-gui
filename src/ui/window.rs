@@ -53,88 +53,90 @@ pub fn build_ui(app: &Application) {
         let window_clone = window.clone();
         let timer_id = timer_id.clone();
 
-        settings_view.clone().connect_record_clicked(move |options| {
-            let config = RecordingConfig {
-                format: options.format,
-                audio: options.audio,
-                region: options.region,
-                output_dir: options.output_dir,
-            };
+        settings_view
+            .clone()
+            .connect_record_clicked(move |options| {
+                let config = RecordingConfig {
+                    format: options.format,
+                    audio: options.audio,
+                    region: options.region,
+                    output_dir: options.output_dir,
+                };
 
-            {
-                let mut state = state.borrow_mut();
-                state.recorder = Some(Recorder::new(config.clone()));
-                state.recording_state = RecordingState::Countdown;
-                if let Some(id) = timer_id.borrow_mut().take() {
-                    id.remove();
+                {
+                    let mut state = state.borrow_mut();
+                    state.recorder = Some(Recorder::new(config.clone()));
+                    state.recording_state = RecordingState::Countdown;
+                    if let Some(id) = timer_id.borrow_mut().take() {
+                        id.remove();
+                    }
                 }
-            }
 
-            recording_view.reset_time();
+                recording_view.reset_time();
 
-            let state_clone = state.clone();
-            let main_box_clone = main_box.clone();
-            let settings_view = settings_view.clone();
-            let countdown_view = countdown_view.clone();
-            let recording_view = recording_view.clone();
-            let window = window_clone.clone();
-            let timer_id = timer_id.clone();
+                let state_clone = state.clone();
+                let main_box_clone = main_box.clone();
+                let settings_view = settings_view.clone();
+                let countdown_view = countdown_view.clone();
+                let recording_view = recording_view.clone();
+                let window = window_clone.clone();
+                let timer_id = timer_id.clone();
 
-            window.set_default_size(200, 100);
-            update_view(
-                &main_box,
-                &RecordingState::Countdown,
-                &settings_view,
-                &countdown_view,
-                &recording_view,
-            );
+                window.set_default_size(200, 100);
+                update_view(
+                    &main_box,
+                    &RecordingState::Countdown,
+                    &settings_view,
+                    &countdown_view,
+                    &recording_view,
+                );
 
-            let mut count = 3;
-            countdown_view.set_countdown(count);
+                let mut count = 3;
+                countdown_view.set_countdown(count);
 
-            // For region selection, we start recording immediately after countdown
-            // For fullscreen, we use the countdown
-            let delay = match config.region {
-                CaptureRegion::Selection => Duration::from_millis(100),
-                CaptureRegion::FullScreen => Duration::from_secs(1),
-            };
+                // For region selection, we start recording immediately after countdown
+                // For fullscreen, we use the countdown
+                let delay = match config.region {
+                    CaptureRegion::Selection => Duration::from_millis(100),
+                    CaptureRegion::FullScreen => Duration::from_secs(1),
+                };
 
-            glib::timeout_add_local(delay, move || {
-                if count > 0 && matches!(config.region, CaptureRegion::FullScreen) {
-                    count -= 1;
-                    countdown_view.set_countdown(count);
-                    glib::ControlFlow::Continue
-                } else {
-                    let mut state = state_clone.borrow_mut();
-                    if let Some(recorder) = state.recorder.as_mut() {
-                        if let Err(e) = recorder.start() {
-                            eprintln!("Failed to start recording: {}", e);
-                            state.recorder = None;
-                            state.recording_state = RecordingState::Settings;
-                            window.set_default_size(320, 520);
-                        } else {
-                            state.recording_state = RecordingState::Recording;
+                glib::timeout_add_local(delay, move || {
+                    if count > 0 && matches!(config.region, CaptureRegion::FullScreen) {
+                        count -= 1;
+                        countdown_view.set_countdown(count);
+                        glib::ControlFlow::Continue
+                    } else {
+                        let mut state = state_clone.borrow_mut();
+                        if let Some(recorder) = state.recorder.as_mut() {
+                            if let Err(e) = recorder.start() {
+                                eprintln!("Failed to start recording: {}", e);
+                                state.recorder = None;
+                                state.recording_state = RecordingState::Settings;
+                                window.set_default_size(320, 520);
+                            } else {
+                                state.recording_state = RecordingState::Recording;
+                            }
                         }
+
+                        update_view(
+                            &main_box_clone,
+                            &state.recording_state,
+                            &settings_view,
+                            &countdown_view,
+                            &recording_view,
+                        );
+
+                        if state.recording_state == RecordingState::Recording {
+                            // Start new timer
+                            let id = start_recording_timer(&recording_view);
+                            *timer_id.borrow_mut() = Some(id);
+                        }
+
+                        glib::ControlFlow::Break
                     }
-
-                    update_view(
-                        &main_box_clone,
-                        &state.recording_state,
-                        &settings_view,
-                        &countdown_view,
-                        &recording_view,
-                    );
-
-                    if state.recording_state == RecordingState::Recording {
-                        // Start new timer
-                        let id = start_recording_timer(&recording_view);
-                        *timer_id.borrow_mut() = Some(id);
-                    }
-
-                    glib::ControlFlow::Break
-                }
+                });
             });
-        });
     }
 
     {
