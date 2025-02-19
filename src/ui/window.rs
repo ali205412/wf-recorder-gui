@@ -1,6 +1,6 @@
 use gtk::prelude::*;
 use gtk::{glib, Application, ApplicationWindow, Box, Orientation};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -12,6 +12,7 @@ use crate::recorder::{CaptureRegion, Recorder, RecordingConfig};
 
 struct AppState {
     recorder: Option<Recorder>,
+    timer_running: Rc<Cell<bool>>,
     recording_state: RecordingState,
 }
 
@@ -38,6 +39,7 @@ pub fn build_ui(app: &Application) {
 
     let state = Rc::new(RefCell::new(AppState {
         recorder: None,
+        timer_running: Rc::new(Cell::new(false)),
         recording_state: RecordingState::Settings,
     }));
 
@@ -116,6 +118,7 @@ pub fn build_ui(app: &Application) {
                                 window.set_default_size(320, 520);
                             } else {
                                 state.recording_state = RecordingState::Recording;
+                                state.timer_running.set(true);
                             }
                         }
 
@@ -129,7 +132,7 @@ pub fn build_ui(app: &Application) {
 
                         if state.recording_state == RecordingState::Recording {
                             // Start new timer
-                            let id = start_recording_timer(&recording_view);
+                            let id = start_recording_timer(&recording_view, state.timer_running.clone());
                             *timer_id.borrow_mut() = Some(id);
                         }
 
@@ -182,6 +185,7 @@ pub fn build_ui(app: &Application) {
                 let _ = recorder.stop();
             }
             state.recorder = None;
+            state.timer_running.set(false);
             state.recording_state = RecordingState::Settings;
             if let Some(id) = timer_id.borrow_mut().take() {
                 id.remove();
@@ -222,15 +226,19 @@ fn update_view(
     }
 }
 
-fn start_recording_timer(recording_view: &RecordingView) -> glib::SourceId {
+fn start_recording_timer(recording_view: &RecordingView, is_running: Rc<Cell<bool>>) -> glib::SourceId {
     let recording_view = recording_view.clone();
     let seconds = Rc::new(RefCell::new(0u32));
 
     glib::timeout_add_local(Duration::from_secs(1), move || {
-        let mut seconds = seconds.borrow_mut();
-        *seconds += 1;
-        recording_view.update_time(*seconds);
-        glib::ControlFlow::Continue
+        if is_running.get() {
+            let mut seconds = seconds.borrow_mut();
+            *seconds += 1;
+            recording_view.update_time(*seconds);
+            glib::ControlFlow::Continue
+        } else {
+            glib::ControlFlow::Break
+        }
     })
 }
 

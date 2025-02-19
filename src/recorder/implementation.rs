@@ -114,7 +114,19 @@ impl Recorder {
 
         // Add region selection if needed
         if let CaptureRegion::Selection = self.config.region {
-            cmd.arg("-g").arg("");
+            // Check for slurp
+            which::which("slurp")
+                .context("slurp not found. Please install it first to use region selection.")?;
+
+            // Run slurp to get geometry
+            let geometry = Command::new("slurp")
+                .output()
+                .context("Failed to run slurp")?;
+
+            let geometry = String::from_utf8_lossy(&geometry.stdout);
+            let geometry = geometry.trim();
+
+            cmd.arg("-g").arg(geometry);
         }
 
         // Start the recording process
