@@ -200,7 +200,7 @@ impl SettingsView {
         path_box.set_spacing(4);
 
         let path_label = Label::builder()
-            .label(&options.borrow().output_dir.to_string_lossy().to_string())
+            .label(options.borrow().output_dir.to_string_lossy().to_string())
             .halign(gtk::Align::Start)
             .hexpand(true)
             .css_classes(vec!["path-label"])
@@ -234,7 +234,7 @@ impl SettingsView {
                 if response == ResponseType::Accept {
                     if let Some(folder) = dialog.file() {
                         if let Some(path) = folder.path() {
-                            path_label.set_text(&path.to_string_lossy().to_string());
+                            path_label.set_text(path.to_string_lossy().as_ref());
                             options.borrow_mut().output_dir = path.clone();
                         }
                     }
