@@ -63,7 +63,7 @@ impl RecordingConfig {
     pub fn new() -> Result<Self> {
         let available_outputs = AvailableOutput::list()?;
         Ok(Self {
-            available_outputs,
+            available_outputs: available_outputs,
             selected_output: None,
             format: OutputFormat::Mp4,
             audio: AudioSource::None,
@@ -75,7 +75,7 @@ impl RecordingConfig {
     pub fn new_with_defaults() -> Self {
         let available_outputs = AvailableOutput::list().unwrap_or_default();
         Self {
-            available_outputs,
+            available_outputs: available_outputs,
             selected_output: None,
             format: OutputFormat::Mp4,
             audio: AudioSource::None,
