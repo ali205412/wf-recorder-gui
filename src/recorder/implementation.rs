@@ -51,10 +51,79 @@ pub enum CaptureRegion {
 
 #[derive(Debug, Clone)]
 pub struct RecordingConfig {
+    pub available_outputs: Vec<AvailableOutput>,
+    pub selected_output: Option<AvailableOutput>,
     pub format: OutputFormat,
     pub audio: AudioSource,
     pub region: CaptureRegion,
     pub output_dir: PathBuf,
+}
+
+impl RecordingConfig {
+    pub fn new() -> Result<Self> {
+        let available_outputs = AvailableOutput::list()?;
+        Ok(Self {
+            available_outputs,
+            selected_output: None,
+            format: OutputFormat::Mp4,
+            audio: AudioSource::None,
+            region: CaptureRegion::FullScreen,
+            output_dir: std::env::temp_dir(),
+        })
+    }
+
+    pub fn new_with_defaults() -> Self {
+        let available_outputs = AvailableOutput::list().unwrap_or_default();
+        Self {
+            available_outputs,
+            selected_output: None,
+            format: OutputFormat::Mp4,
+            audio: AudioSource::None,
+            region: CaptureRegion::FullScreen,
+            output_dir: std::env::temp_dir(),
+        }
+    }
+
+    pub fn has_multiple_outputs(&self) -> bool {
+        self.available_outputs.len() > 1
+    }
+
+    pub fn get_available_outputs(&self) -> &Vec<AvailableOutput> {
+        &self.available_outputs
+    }
+
+    pub fn set_selected_output(&mut self, index: usize) {
+        if let Some(output) = self.available_outputs.get(index) {
+            self.selected_output = Some(output.clone());
+        }
+    }
+
+    pub fn set_selected_output_by_name(&mut self, output_name: &str) {
+        if let Some(output) = self
+            .available_outputs
+            .iter()
+            .find(|o| o.output_name == output_name)
+        {
+            self.selected_output = Some(output.clone());
+        }
+    }
+
+    pub fn get_selected_output(&self) -> Option<&AvailableOutput> {
+        self.selected_output.as_ref()
+    }
+
+    // Auto-select first output if multiple available and none selected
+    pub fn ensure_output_selected(&mut self) {
+        if self.selected_output.is_none() && !self.available_outputs.is_empty() {
+            self.selected_output = Some(self.available_outputs[0].clone());
+        }
+    }
+}
+
+impl Default for RecordingConfig {
+    fn default() -> Self {
+        Self::new_with_defaults()
+    }
 }
 
 #[derive(Clone)]
@@ -127,6 +196,12 @@ impl Recorder {
             let geometry = geometry.trim();
 
             cmd.arg("-g").arg(geometry);
+        } else {
+            if self.config.has_multiple_outputs() {
+                if let Some(selected_output) = self.config.get_selected_output() {
+                    cmd.arg("-o").arg(&selected_output.output_name);
+                }
+            }
         }
 
         // Start the recording process
@@ -150,5 +225,58 @@ impl Recorder {
 impl Drop for Recorder {
     fn drop(&mut self) {
         let _ = self.stop();
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct AvailableOutput {
+    pub output_name: String,
+    pub description: String,
+}
+
+impl AvailableOutput {
+    pub fn list() -> Result<Vec<AvailableOutput>> {
+        which::which("wf-recorder").context("wf-recorder not found. Please install it first.")?;
+
+        let output = Command::new("wf-recorder")
+            .args(["--list-output"])
+            .output()?;
+
+        let sources = String::from_utf8_lossy(&output.stdout);
+        let mut available_outputs = Vec::new();
+
+        for line in sources.lines() {
+            if let Some(parsed) = Self::parse_line(line) {
+                available_outputs.push(parsed);
+            }
+        }
+
+        Ok(available_outputs)
+    }
+
+    fn parse_line(line: &str) -> Option<AvailableOutput> {
+        let name_start = line.find("Name: ")? + 6;
+        let name_part = &line[name_start..];
+        let name_end = name_part.find(" Description: ")?;
+        let output_name = name_part[..name_end].to_string();
+
+        let desc_start = line.find("Description: ")? + 13;
+        let description = line[desc_start..].to_string();
+
+        Some(AvailableOutput {
+            output_name,
+            description,
+        })
+    }
+
+    pub fn display_name(&self) -> String {
+        format!(
+            "{} ({})",
+            self.output_name,
+            self.description
+                .split_whitespace()
+                .take(3)
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 }
