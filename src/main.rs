@@ -1,23 +1,29 @@
 mod audio;
 mod config;
 mod recorder;
+mod theme;
 
 use anyhow::Result;
 use iced::widget::{button, column, container, pick_list, row, text, Space};
-use iced::{executor, Application, Command, Element, Length, Settings, Theme};
+use iced::{executor, alignment, Application, Command, Element, Length, Settings, Theme as IcedTheme, Font};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use config::Config;
 use recorder::{AudioSource, CaptureRegion, OutputFormat, Recorder, RecordingConfig};
+use theme::{Theme, design};
 
 fn main() -> Result<()> {
     App::run(Settings {
         window: iced::window::Settings {
-            size: iced::Size::new(300.0, 400.0),
+            size: iced::Size::new(420.0, 520.0),  // Onagre-like size
             resizable: false,
+            decorations: true,
+            transparent: false,
             ..Default::default()
         },
+        antialiasing: true,
+        default_font: Font::default(),
         ..Default::default()
     })?;
     Ok(())
@@ -26,8 +32,8 @@ fn main() -> Result<()> {
 #[derive(Debug, Clone)]
 enum Message {
     FormatSelected(OutputFormat),
-    AudioSelected(AudioSource),
-    RegionSelected(CaptureRegion),
+    ToggleRegion(bool),
+    ToggleAudio(AudioSource),
     BrowseFolder,
     FolderSelected(PathBuf),
     StartRecording,
@@ -48,12 +54,13 @@ struct App {
     recorder: Option<Recorder>,
     recording_start: Option<Instant>,
     recording_duration: Duration,
+    theme: Theme,
 }
 
 impl Application for App {
     type Executor = executor::Default;
     type Message = Message;
-    type Theme = Theme;
+    type Theme = IcedTheme;
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
@@ -66,6 +73,7 @@ impl Application for App {
                 recorder: None,
                 recording_start: None,
                 recording_duration: Duration::default(),
+                theme: Theme::default(),
             },
             Command::none(),
         )
@@ -75,6 +83,10 @@ impl Application for App {
         String::from("WF Recorder")
     }
 
+    fn theme(&self) -> IcedTheme {
+        IcedTheme::Dark
+    }
+
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::FormatSelected(format) => {
@@ -82,21 +94,26 @@ impl Application for App {
                 let _ = self.config.save();
                 Command::none()
             }
-            Message::AudioSelected(audio) => {
-                self.config.audio = audio;
+            Message::ToggleRegion(is_fullscreen) => {
+                self.config.region = if is_fullscreen {
+                    CaptureRegion::FullScreen
+                } else {
+                    CaptureRegion::Selection
+                };
                 let _ = self.config.save();
                 Command::none()
             }
-            Message::RegionSelected(region) => {
-                self.config.region = region;
+            Message::ToggleAudio(source) => {
+                self.config.audio = source;
                 let _ = self.config.save();
                 Command::none()
             }
             Message::BrowseFolder => {
+                let current_dir = self.config.output_dir.clone();
                 Command::perform(
                     async move {
                         if let Some(path) = rfd::AsyncFileDialog::new()
-                            .set_directory(std::env::current_dir().unwrap_or_default())
+                            .set_directory(current_dir)
                             .pick_folder()
                             .await
                         {
@@ -219,105 +236,322 @@ impl Application for App {
             AppState::Recording => self.view_recording(),
         };
 
+        // Main window container with onagre-style padding
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .center_x()
-            .center_y()
-            .padding(20)
+            .padding(design::WINDOW_PADDING)
+            .style(iced::theme::Container::Custom(Box::new(
+                theme::WindowStyle(self.theme.colors)
+            )))
             .into()
     }
 }
 
 impl App {
     fn view_settings(&self) -> Element<Message> {
-        let format_picker = pick_list(
-            vec![OutputFormat::WebM, OutputFormat::Mp4, OutputFormat::Mkv],
-            Some(self.config.format),
-            Message::FormatSelected,
+        let colors = self.theme.colors;
+        
+        // Title with subtitle - like onagre's search bar
+        let title_section = container(
+            column![
+                text("WF Recorder")
+                    .size(design::TITLE_SIZE)
+                    .font(Font {
+                        weight: iced::font::Weight::Bold,
+                        ..Default::default()
+                    })
+                    .style(iced::theme::Text::Color(colors.text)),
+                text(format!("{} • 30FPS", self.config.format))
+                    .size(design::SUBTITLE_SIZE)
+                    .style(iced::theme::Text::Color(colors.text_secondary)),
+            ]
+            .spacing(4)
+        )
+        .width(Length::Fill)
+        .padding([0, 0, design::SECTION_SPACING, 0])
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::ContainerStyle(colors)
+        )));
+
+        // Capture mode buttons - like onagre's rows
+        let capture_buttons = row![
+            self.create_option_button(
+                "🖥",
+                "Screen",
+                matches!(self.config.region, CaptureRegion::FullScreen),
+                Message::ToggleRegion(true),
+            ),
+            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            self.create_option_button(
+                "◰",
+                "Region",
+                matches!(self.config.region, CaptureRegion::Selection),
+                Message::ToggleRegion(false),
+            ),
+        ];
+
+        let capture_section = self.create_section(
+            "CAPTURE MODE",
+            capture_buttons
         );
 
-        let audio_picker = pick_list(
-            vec![AudioSource::None, AudioSource::System, AudioSource::Microphone],
-            Some(self.config.audio),
-            Message::AudioSelected,
+        // Audio source buttons
+        let audio_buttons = row![
+            self.create_option_button(
+                "🔊",
+                "System",
+                matches!(self.config.audio, AudioSource::System),
+                Message::ToggleAudio(AudioSource::System),
+            ),
+            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            self.create_option_button(
+                "🎤",
+                "Mic",
+                matches!(self.config.audio, AudioSource::Microphone),
+                Message::ToggleAudio(AudioSource::Microphone),
+            ),
+            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            self.create_option_button(
+                "🔇",
+                "None",
+                matches!(self.config.audio, AudioSource::None),
+                Message::ToggleAudio(AudioSource::None),
+            ),
+        ];
+
+        let audio_section = self.create_section(
+            "AUDIO SOURCE",
+            audio_buttons
         );
 
-        let region_picker = pick_list(
-            vec![CaptureRegion::FullScreen, CaptureRegion::Selection],
-            Some(self.config.region),
-            Message::RegionSelected,
+        // Format picker - styled like onagre's search input
+        let format_section = self.create_section(
+            "OUTPUT FORMAT",
+            container(
+                pick_list(
+                    vec![OutputFormat::WebM, OutputFormat::Mp4, OutputFormat::Mkv],
+                    Some(self.config.format),
+                    Message::FormatSelected,
+                )
+                .padding([design::CONTAINER_PADDING, design::CONTAINER_PADDING])
+                .width(Length::Fill)
+                .text_size(design::INPUT_TEXT_SIZE)
+            )
+            .width(Length::Fill)
+            .style(iced::theme::Container::Custom(Box::new(
+                theme::SearchStyle(colors)
+            )))
         );
 
+        // Save location
         let folder_text = self.config.output_dir.to_string_lossy().to_string();
-        let folder_row = row![
-            text(folder_text).size(14),
-            button("Browse").on_press(Message::BrowseFolder),
-        ]
-        .spacing(10);
+        let folder_display = if folder_text.len() > 35 {
+            format!("...{}", &folder_text[folder_text.len()-32..])
+        } else {
+            folder_text
+        };
+        
+        let location_section = self.create_section(
+            "SAVE LOCATION",
+            container(
+                row![
+                    text(folder_display)
+                        .size(design::BUTTON_TEXT_SIZE)
+                        .style(iced::theme::Text::Color(colors.text_secondary)),
+                    Space::with_width(Length::Fill),
+                    button(
+                        text("Browse")
+                            .size(design::BUTTON_TEXT_SIZE)
+                    )
+                    .on_press(Message::BrowseFolder)
+                    .padding([8, 16])
+                    .style(iced::theme::Button::Custom(Box::new(
+                        theme::SecondaryButton(colors)
+                    ))),
+                ]
+                .align_items(alignment::Alignment::Center)
+            )
+            .padding(design::CONTAINER_PADDING)
+            .width(Length::Fill)
+            .style(iced::theme::Container::Custom(Box::new(
+                theme::SearchStyle(colors)
+            )))
+        );
 
-        let record_button = button("Record")
-            .on_press(Message::StartRecording)
-            .padding(10)
-            .width(Length::Fill);
+        // Record button - primary action
+        let record_button = button(
+            text("Start Recording")
+                .size(design::INPUT_TEXT_SIZE)
+                .horizontal_alignment(alignment::Horizontal::Center)
+        )
+        .on_press(Message::StartRecording)
+        .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+        .width(Length::Fill)
+        .style(iced::theme::Button::Custom(Box::new(
+            theme::PrimaryButton(colors)
+        )));
 
-        column![
-            text("WF Recorder").size(24),
-            Space::with_height(20),
-            text("Format:").size(16),
-            format_picker,
-            Space::with_height(10),
-            text("Audio:").size(16),
-            audio_picker,
-            Space::with_height(10),
-            text("Capture:").size(16),
-            region_picker,
-            Space::with_height(10),
-            text("Save to:").size(16),
-            folder_row,
-            Space::with_height(30),
-            record_button,
-        ]
-        .spacing(5)
+        // Layout with onagre-style spacing
+        container(
+            column![
+                title_section,
+                capture_section,
+                audio_section,
+                format_section,
+                location_section,
+                Space::with_height(Length::Fill), // Push button to bottom
+                record_button,
+            ]
+            .spacing(design::SECTION_SPACING)
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::ContainerStyle(colors)
+        )))
         .into()
     }
 
     fn view_countdown(&self, count: u8) -> Element<Message> {
-        column![
-            text("Recording in...").size(20),
-            Space::with_height(20),
-            text(count.to_string()).size(48),
-            Space::with_height(20),
-            button("Cancel")
+        let colors = self.theme.colors;
+        
+        container(
+            column![
+                text("Recording in...")
+                    .size(design::SUBTITLE_SIZE)
+                    .style(iced::theme::Text::Color(colors.text_secondary)),
+                Space::with_height(Length::Fixed(32.0)),
+                container(
+                    text(count.to_string())
+                        .size(72)
+                        .font(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        })
+                        .style(iced::theme::Text::Color(colors.primary))
+                )
+                .width(Length::Fixed(120.0))
+                .height(Length::Fixed(120.0))
+                .center_x()
+                .center_y()
+                .style(iced::theme::Container::Custom(Box::new(
+                    theme::SearchStyle(colors)
+                ))),
+                Space::with_height(Length::Fixed(32.0)),
+                button(
+                    text("Cancel")
+                        .size(design::BUTTON_TEXT_SIZE)
+                )
                 .on_press(Message::StopRecording)
-                .padding(10)
-                .width(Length::Fill),
-        ]
-        .align_items(iced::Alignment::Center)
+                .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+                .style(iced::theme::Button::Custom(Box::new(
+                    theme::DangerButton(colors)
+                ))),
+            ]
+            .align_items(alignment::Alignment::Center)
+            .spacing(0)
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y()
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::ContainerStyle(colors)
+        )))
         .into()
     }
 
     fn view_recording(&self) -> Element<Message> {
+        let colors = self.theme.colors;
         let minutes = self.recording_duration.as_secs() / 60;
         let seconds = self.recording_duration.as_secs() % 60;
         let time_text = format!("{:02}:{:02}", minutes, seconds);
 
-        column![
-            text("Recording").size(20),
-            Space::with_height(20),
-            text(time_text).size(42),
-            Space::with_height(20),
-            button("Stop")
+        container(
+            column![
+                row![
+                    text("⏸")
+                        .size(20)
+                        .style(iced::theme::Text::Color(colors.danger)),
+                    Space::with_width(Length::Fixed(8.0)),
+                    text("Recording")
+                        .size(design::SUBTITLE_SIZE)
+                        .style(iced::theme::Text::Color(colors.text)),
+                ]
+                .align_items(alignment::Alignment::Center),
+                Space::with_height(Length::Fixed(32.0)),
+                text(time_text)
+                    .size(56)
+                    .font(Font {
+                        family: iced::font::Family::Monospace,
+                        weight: iced::font::Weight::Light,
+                        ..Default::default()
+                    })
+                    .style(iced::theme::Text::Color(colors.text)),
+                Space::with_height(Length::Fixed(32.0)),
+                button(
+                    text("Stop Recording")
+                        .size(design::BUTTON_TEXT_SIZE)
+                )
                 .on_press(Message::StopRecording)
-                .padding(10)
-                .width(Length::Fill),
+                .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+                .style(iced::theme::Button::Custom(Box::new(
+                    theme::DangerButton(colors)
+                ))),
+            ]
+            .align_items(alignment::Alignment::Center)
+            .spacing(0)
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y()
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::ContainerStyle(colors)
+        )))
+        .into()
+    }
+
+    // Helper to create sections with labels
+    fn create_section<'a>(&self, label: &str, content: impl Into<Element<'a, Message>>) -> Element<'a, Message> {
+        column![
+            text(label)
+                .size(design::LABEL_SIZE)
+                .style(iced::theme::Text::Color(self.theme.colors.text_secondary)),
+            Space::with_height(Length::Fixed(8.0)),
+            content.into(),
         ]
-        .align_items(iced::Alignment::Center)
+        .spacing(0)
+        .into()
+    }
+
+    // Helper to create option buttons matching onagre's row style
+    fn create_option_button(&self, icon: &str, label: &str, is_active: bool, message: Message) -> Element<Message> {
+        button(
+            column![
+                text(icon)
+                    .size(24),  // Fixed icon size
+                Space::with_height(Length::Fixed(4.0)),
+                text(label)
+                    .size(design::BUTTON_TEXT_SIZE)
+            ]
+            .spacing(0)
+            .align_items(alignment::Alignment::Center)
+            .width(Length::Fixed(design::BUTTON_WIDTH as f32))
+        )
+        .on_press(message)
+        .padding([design::BUTTON_PADDING_V, 0])  // Vertical padding only
+        .width(Length::Fixed(design::BUTTON_WIDTH as f32))
+        .height(Length::Fixed(design::BUTTON_HEIGHT as f32))
+        .style(iced::theme::Button::Custom(Box::new(
+            theme::RowStyle(self.theme.colors, is_active)
+        )))
         .into()
     }
 }
 
-// Implement Display for our types so they work with pick_list
+// Implement Display for our types
 impl std::fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
