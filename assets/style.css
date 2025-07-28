@@ -1,213 +1,233 @@
 /* Modern, minimal theme */
 .main-window {
-    background: #ffffff;
-    border-radius: 12px;
+	background: #ffffff;
+	border-radius: 12px;
 }
 
 /* Settings View */
 .settings-view {
-    background: #ffffff;
-    padding: 6px;
+	background: #ffffff;
+	padding: 6px;
 }
 
 .window-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: #000000;
-    margin-bottom: 0;
-    text-align: center;
+	font-size: 15px;
+	font-weight: 500;
+	color: #000000;
+	margin-bottom: 0;
+	text-align: center;
 }
 
 .window-subtitle {
-    font-size: 12px;
-    color: #666666;
-    margin-bottom: 6px;
-    text-align: center;
+	font-size: 12px;
+	color: #666666;
+	margin-bottom: 6px;
+	text-align: center;
 }
 
 .format-dropdown {
-    background: #f5f5f5;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: 8px;
-    color: #333333;
-    font-size: 13px;
-    padding: 6px 10px;
-    margin: 0;
+	background: #f5f5f5;
+	border: 1px solid rgba(0, 0, 0, 0.04);
+	border-radius: 8px;
+	color: #333333;
+	font-size: 13px;
+	padding: 6px 10px;
+	margin: 0;
+	min-width: 15rem;
+	max-width: 15rem;
+	width: 15rem;
 }
 
 .format-dropdown:hover {
-    background: #f0f0f0;
+	background: #f0f0f0;
+}
+
+.output-dropdown {
+	background: #f5f5f5;
+	border: 1px solid rgba(0, 0, 0, 0.04);
+	border-radius: 8px;
+	color: #333333;
+	font-size: 13px;
+	padding: 6px 10px;
+	margin: 0;
+	min-width: 15rem;
+	max-width: 15rem;
+	width: 15rem;
+}
+
+.output-dropdown:hover {
+	background: #f0f0f0;
 }
 
 .option-grid {
-    margin: 0;
-    max-width: 180px;
+	margin: 0;
+	max-width: 180px;
 }
 
 .dynamic-grid {
-    min-width: 0;
-    min-height: 0;
+	min-width: 0;
+	min-height: 0;
 }
 
 .option-grid flowboxchild {
-    padding: 0;
+	padding: 0;
 }
 
 .option-button {
-    background: #ffffff;
-    border: none;
-    border-radius: 10px;
-    padding: 6px;
-    margin: 1px;
-    transition: all 150ms ease;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+	background: #ffffff;
+	border: none;
+	border-radius: 10px;
+	padding: 6px;
+	margin: 1px;
+	transition: all 150ms ease;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 .option-button:hover {
-    background: #fafafa;
+	background: #fafafa;
 }
 
 .option-button.active {
-    background: #f0f7ff;
-    border-color: rgba(33, 150, 243, 0.1);
+	background: #f0f7ff;
+	border-color: rgba(33, 150, 243, 0.1);
 }
 
 .option-button image {
-    color: #666666;
-    -gtk-icon-size: 18px;
-    margin-bottom: 4px;
+	color: #666666;
+	-gtk-icon-size: 18px;
+	margin-bottom: 4px;
 }
 
 .option-button.active image {
-    color: #2196f3;
+	color: #2196f3;
 }
 
 .option-label {
-    font-size: 11px;
-    line-height: 1;
-    color: #666666;
-    margin: 0;
-    padding: 0;
-    text-align: center;
+	font-size: 11px;
+	line-height: 1;
+	color: #666666;
+	margin: 0;
+	padding: 0;
+	text-align: center;
 }
 
 .option-button.active .option-label {
-    color: #2196f3;
+	color: #2196f3;
 }
 
 .path-label {
-    font-size: 12px;
-    color: #666666;
-    background: #f5f5f5;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: 6px;
-    padding: 4px 8px;
+	font-size: 12px;
+	color: #666666;
+	background: #f5f5f5;
+	border: 1px solid rgba(0, 0, 0, 0.04);
+	border-radius: 6px;
+	padding: 4px 8px;
 }
 
 .path-button {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: #f5f5f5;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+	font-size: 12px;
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: #f5f5f5;
+	border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .path-button:hover {
-    background: #f0f0f0;
+	background: #f0f0f0;
 }
 
 .record-button {
-    background: #0d8af5;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    padding: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    margin-top: 6px;
-    transition: all 150ms ease;
+	background: #0d8af5;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	padding: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	margin-top: 6px;
+	transition: all 150ms ease;
 }
 
 .record-button:hover {
-    background: #0b7de3;
+	background: #0b7de3;
 }
 
 /* Recording View */
 .recording-view {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 8px;
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 8px;
 }
 
 .recording-title {
-    font-size: 14px;
-    color: #333333;
-    margin-bottom: 4px;
-    text-align: center;
+	font-size: 14px;
+	color: #333333;
+	margin-bottom: 4px;
+	text-align: center;
 }
 
 .time-label {
-    color: #ff0000;
-    font-size: 42px;
-    font-weight: 400;
-    font-family: monospace;
-    margin: 4px 0;
-    text-align: center;
+	color: #ff0000;
+	font-size: 42px;
+	font-weight: 400;
+	font-family: monospace;
+	margin: 4px 0;
+	text-align: center;
 }
 
 .stop-button {
-    background: #ff0000;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    padding: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    margin-top: 4px;
-    transition: all 150ms ease;
+	background: #ff0000;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	padding: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	margin-top: 4px;
+	transition: all 150ms ease;
 }
 
 .stop-button:hover {
-    background: #e60000;
+	background: #e60000;
 }
 
 /* Countdown View */
 .countdown-view {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 8px;
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 8px;
 }
 
 .countdown-title {
-    font-size: 14px;
-    color: #333333;
-    margin-bottom: 4px;
-    text-align: center;
+	font-size: 14px;
+	color: #333333;
+	margin-bottom: 4px;
+	text-align: center;
 }
 
 .countdown-number {
-    color: #333333;
-    font-size: 48px;
-    font-weight: 400;
-    margin: 4px 0;
-    text-align: center;
+	color: #333333;
+	font-size: 48px;
+	font-weight: 400;
+	margin: 4px 0;
+	text-align: center;
 }
 
 .cancel-button {
-    background: #ff0000;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    padding: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    margin-top: 4px;
-    transition: all 150ms ease;
+	background: #ff0000;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	padding: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	margin-top: 4px;
+	transition: all 150ms ease;
 }
 
 .cancel-button:hover {
-    background: #e60000;
+	background: #e60000;
 }

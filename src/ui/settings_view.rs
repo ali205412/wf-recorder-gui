@@ -4,35 +4,15 @@ use gtk::{
     Orientation, ResponseType, StringList,
 };
 use std::cell::RefCell;
-use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::recorder::{AudioSource, CaptureRegion, OutputFormat};
-
-#[derive(Clone)]
-pub struct RecordingOptions {
-    pub format: OutputFormat,
-    pub audio: AudioSource,
-    pub region: CaptureRegion,
-    pub output_dir: PathBuf,
-}
-
-impl Default for RecordingOptions {
-    fn default() -> Self {
-        Self {
-            format: OutputFormat::Mp4,
-            audio: AudioSource::None,
-            region: CaptureRegion::FullScreen,
-            output_dir: std::env::temp_dir(),
-        }
-    }
-}
+use crate::recorder::{AudioSource, CaptureRegion, OutputFormat, RecordingConfig};
 
 #[derive(Clone)]
 pub struct SettingsView {
     container: Box,
     record_button: Button,
-    options: Rc<RefCell<RecordingOptions>>,
+    options: Rc<RefCell<RecordingConfig>>,
 }
 
 impl SettingsView {
@@ -40,7 +20,7 @@ impl SettingsView {
         let container = Box::new(Orientation::Vertical, 0);
         container.add_css_class("settings-view");
 
-        let options = Rc::new(RefCell::new(RecordingOptions::default()));
+        let options = Rc::new(RefCell::new(RecordingConfig::new_with_defaults()));
 
         // Main content box with padding
         let content = Box::new(Orientation::Vertical, 4);
@@ -193,6 +173,64 @@ impl SettingsView {
 
         format_box.append(&format_dropdown);
 
+        // display output section
+        let output_available_box = Box::new(Orientation::Horizontal, 4);
+        output_available_box.set_halign(gtk::Align::Fill);
+        output_available_box.set_margin_top(6);
+        output_available_box.set_size_request(-1, 40); // Fixed height
+        output_available_box.set_visible(true); // Always visible
+
+        // Store outputs for later use
+        let available_outputs = options.borrow().get_available_outputs().clone();
+
+        // Only create dropdown if we have multiple outputs
+        let output_dropdown_option = if available_outputs.len() > 1 {
+            let output_available_model = StringList::new(&[]);
+            for output in &available_outputs {
+                output_available_model.append(&output.display_name());
+            }
+
+            let output_available_dropdown = DropDown::builder()
+                .model(&output_available_model)
+                .selected(0)
+                .css_classes(vec!["output-dropdown"])
+                .build();
+
+            let options_clone = options.clone();
+            output_available_dropdown.connect_selected_notify(move |dropdown| {
+                let idx = dropdown.selected() as usize;
+                options_clone.borrow_mut().set_selected_output(idx);
+            });
+
+            Some(output_available_dropdown)
+        } else {
+            None
+        };
+
+        let update_output_visibility = {
+            let output_box = output_available_box.clone();
+            let options = options.clone();
+            let dropdown = output_dropdown_option.clone();
+
+            move || {
+                // Clear the box first
+                while let Some(child) = output_box.first_child() {
+                    output_box.remove(&child);
+                }
+
+                let should_display = options.borrow().has_multiple_outputs()
+                    && matches!(options.borrow().region, CaptureRegion::FullScreen);
+
+                if should_display {
+                    if let Some(ref dropdown) = dropdown {
+                        output_box.append(dropdown);
+                    }
+                }
+            }
+        };
+        // Set initial state
+        update_output_visibility();
+
         // Output directory selector
         let path_box = Box::new(Orientation::Horizontal, 4);
         path_box.set_halign(gtk::Align::Fill);
@@ -260,10 +298,12 @@ impl SettingsView {
             let screen_btn = screen_btn.clone();
             let region_btn = region_btn.clone();
             let options = options.clone();
+            let update_visibility = update_output_visibility.clone();
             screen_btn.connect_clicked(move |btn| {
                 btn.add_css_class("active");
                 region_btn.remove_css_class("active");
                 options.borrow_mut().region = CaptureRegion::FullScreen;
+                update_visibility();
             });
         }
 
@@ -271,10 +311,12 @@ impl SettingsView {
             let screen_btn = screen_btn.clone();
             let region_btn = region_btn.clone();
             let options = options.clone();
+            let update_visibility = update_output_visibility.clone();
             region_btn.connect_clicked(move |btn| {
                 btn.add_css_class("active");
                 screen_btn.remove_css_class("active");
                 options.borrow_mut().region = CaptureRegion::Selection;
+                update_visibility();
             });
         }
 
@@ -320,6 +362,7 @@ impl SettingsView {
         // Add all sections
         content.append(&flow_box);
         content.append(&format_box);
+        content.append(&output_available_box);
         content.append(&path_box);
         content.append(&record_button);
 
@@ -336,10 +379,12 @@ impl SettingsView {
         &self.container
     }
 
-    pub fn connect_record_clicked<F: Fn(RecordingOptions) + 'static>(&self, f: F) {
+    pub fn connect_record_clicked<F: Fn(RecordingConfig) + 'static>(&self, f: F) {
         let options = self.options.clone();
         self.record_button.connect_clicked(move |_| {
-            f(options.borrow().clone());
+            let mut config = options.borrow().clone();
+            config.ensure_output_selected();
+            f(config);
         });
     }
 }
