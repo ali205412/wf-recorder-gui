@@ -8,7 +8,7 @@ use super::{
     countdown_view::CountdownView, recording_view::RecordingView, settings_view::SettingsView,
     RecordingState,
 };
-use crate::recorder::{CaptureRegion, Recorder, RecordingConfig};
+use crate::recorder::{CaptureRegion, Recorder};
 
 struct AppState {
     recorder: Option<Recorder>,
@@ -104,7 +104,7 @@ pub fn build_ui(app: &Application) {
                     let mut state = state_clone.borrow_mut();
                     if let Some(recorder) = state.recorder.as_mut() {
                         if let Err(e) = recorder.start() {
-                            eprintln!("Failed to start recording: {}", e);
+                            eprintln!("Failed to start recording: {e}");
                             state.recorder = None;
                             state.recording_state = RecordingState::Settings;
                             window.set_default_size(180, 320);

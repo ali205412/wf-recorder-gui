@@ -4,10 +4,9 @@ use gtk::{
     Orientation, ResponseType, StringList,
 };
 use std::cell::RefCell;
-use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::recorder::{AudioSource, AvailableOutput, CaptureRegion, OutputFormat, RecordingConfig};
+use crate::recorder::{AudioSource, CaptureRegion, OutputFormat, RecordingConfig};
 
 #[derive(Clone)]
 pub struct SettingsView {

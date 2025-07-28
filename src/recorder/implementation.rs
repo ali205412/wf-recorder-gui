@@ -63,7 +63,7 @@ impl RecordingConfig {
     pub fn new() -> Result<Self> {
         let available_outputs = AvailableOutput::list()?;
         Ok(Self {
-            available_outputs: available_outputs,
+            available_outputs,
             selected_output: None,
             format: OutputFormat::Mp4,
             audio: AudioSource::None,
@@ -75,7 +75,7 @@ impl RecordingConfig {
     pub fn new_with_defaults() -> Self {
         let available_outputs = AvailableOutput::list().unwrap_or_default();
         Self {
-            available_outputs: available_outputs,
+            available_outputs,
             selected_output: None,
             format: OutputFormat::Mp4,
             audio: AudioSource::None,
@@ -94,16 +94,6 @@ impl RecordingConfig {
 
     pub fn set_selected_output(&mut self, index: usize) {
         if let Some(output) = self.available_outputs.get(index) {
-            self.selected_output = Some(output.clone());
-        }
-    }
-
-    pub fn set_selected_output_by_name(&mut self, output_name: &str) {
-        if let Some(output) = self
-            .available_outputs
-            .iter()
-            .find(|o| o.output_name == output_name)
-        {
             self.selected_output = Some(output.clone());
         }
     }
@@ -196,11 +186,9 @@ impl Recorder {
             let geometry = geometry.trim();
 
             cmd.arg("-g").arg(geometry);
-        } else {
-            if self.config.has_multiple_outputs() {
-                if let Some(selected_output) = self.config.get_selected_output() {
-                    cmd.arg("-o").arg(&selected_output.output_name);
-                }
+        } else if self.config.has_multiple_outputs() {
+            if let Some(selected_output) = self.config.get_selected_output() {
+                cmd.arg("-o").arg(&selected_output.output_name);
             }
         }
 
