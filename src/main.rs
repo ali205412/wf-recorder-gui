@@ -192,7 +192,7 @@ impl Application for App {
 
                             let mut recorder = Recorder::new(recording_config);
                             if let Err(e) = recorder.start() {
-                                eprintln!("Failed to start recording: {}", e);
+                                eprintln!("Failed to start recording: {e}");
                                 self.state = AppState::Settings;
                                 Command::none()
                             } else {
@@ -452,7 +452,7 @@ impl App {
         let colors = self.theme.colors;
         let minutes = self.recording_duration.as_secs() / 60;
         let seconds = self.recording_duration.as_secs() % 60;
-        let time_text = format!("{:02}:{:02}", minutes, seconds);
+        let time_text = format!("{minutes:02}:{seconds:02}");
 
         container(
             column![
