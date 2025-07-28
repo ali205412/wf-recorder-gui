@@ -4,11 +4,11 @@
 [![Release](https://github.com/ali205412/wf-recorder-gui/actions/workflows/release.yml/badge.svg)](https://github.com/ali205412/wf-recorder-gui/actions/workflows/release.yml)
 [![AUR version](https://img.shields.io/aur/version/wf-recorder-gui)](https://aur.archlinux.org/packages/wf-recorder-gui/)
 
-A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. Built with GTK4 and Rust, featuring an intuitive interface and efficient workflow.
+A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. Built with iced and Rust, featuring a lightweight native interface with persistent settings.
 
 ## Features
 
-- Modern GTK4 native interface
+- Lightweight iced-based native interface
 - Clean, minimal design
 - Full screen and region capture
 - Multiple audio source options:
@@ -19,7 +19,7 @@ A modern, minimal, and sleek GUI for wf-recorder, the Wayland screen recorder. B
   - WebM
   - MP4
   - MKV
-- Custom save location
+- Custom save location with persistent settings
 - Hardware acceleration support
 - Wayland native
 
@@ -41,8 +41,6 @@ paru -S wf-recorder-gui
 Build from source:
 
 1. Install dependencies (package names may vary):
-   - GTK4
-   - libadwaita
    - wf-recorder
    - Rust toolchain
 
@@ -73,7 +71,7 @@ sudo install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-
 - Arch Linux (recommended for development)
 - Dependencies:
 ```bash
-sudo pacman -S gtk4 libadwaita wf-recorder base-devel rust
+sudo pacman -S wf-recorder base-devel rust
 ```
 
 ### Project Structure
@@ -81,10 +79,9 @@ sudo pacman -S gtk4 libadwaita wf-recorder base-devel rust
 ```
 src/
 ├── audio/       # Audio handling
-├── config/      # Configuration management
+├── config/      # Configuration management with persistence
 ├── recorder/    # Recording functionality
-├── ui/         # User interface components
-└── main.rs     # Application entry point
+└── main.rs     # Application entry point with iced UI
 ```
 
 ### CI/CD Workflows
