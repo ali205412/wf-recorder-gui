@@ -20,6 +20,7 @@ impl OutputFormat {
         }
     }
 
+    #[allow(dead_code)]
     pub fn all() -> &'static [(OutputFormat, &'static str)] {
         &[
             (OutputFormat::WebM, "WebM - Best for web"),
