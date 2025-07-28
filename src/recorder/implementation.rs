@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use chrono::Local;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum OutputFormat {
     WebM,
     Mp4,
@@ -19,6 +20,7 @@ impl OutputFormat {
         }
     }
 
+    #[allow(dead_code)]
     pub fn all() -> &'static [(OutputFormat, &'static str)] {
         &[
             (OutputFormat::WebM, "WebM - Best for web"),
@@ -36,14 +38,14 @@ impl OutputFormat {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AudioSource {
     None,
     System,
     Microphone,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CaptureRegion {
     FullScreen,
     Selection,
