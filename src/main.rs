@@ -290,7 +290,7 @@ impl Application for App {
         }
     }
 
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'_, Message> {
         let content = match self.state {
             AppState::Settings => self.view_settings(),
             AppState::CompactCountdown(count) => self.view_compact_countdown(count),
@@ -362,7 +362,7 @@ impl App {
         // Default fallback - use reference resolution
         Size::new(design::REFERENCE_WIDTH, design::REFERENCE_HEIGHT)
     }
-    fn view_settings(&self) -> Element<Message> {
+    fn view_settings(&self) -> Element<'_, Message> {
         let colors = self.theme.colors;
 
         // Dynamic sizes based on scale factor
@@ -550,7 +550,7 @@ impl App {
         label: &str,
         is_active: bool,
         message: Message,
-    ) -> Element<Message> {
+    ) -> Element<'_, Message> {
         button(
             column![
                 text(icon).size(24), // Keep icon size fixed for consistency
@@ -574,7 +574,7 @@ impl App {
     }
 
     // Compact countdown view - minimal UI for recording
-    fn view_compact_countdown(&self, count: u8) -> Element<Message> {
+    fn view_compact_countdown(&self, count: u8) -> Element<'_, Message> {
         let colors = self.theme.colors;
 
         container(
@@ -608,7 +608,7 @@ impl App {
     }
 
     // Compact recording view - minimal recording indicator
-    fn view_compact_recording(&self) -> Element<Message> {
+    fn view_compact_recording(&self) -> Element<'_, Message> {
         let colors = self.theme.colors;
         let minutes = self.recording_duration.as_secs() / 60;
         let seconds = self.recording_duration.as_secs() % 60;

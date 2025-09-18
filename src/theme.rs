@@ -20,7 +20,6 @@ pub struct ColorPalette {
     pub primary_hover: Color, // Brighter primary hover
     pub primary_light: Color, // Light primary variant
     pub danger: Color,        // Red for destructive actions
-    pub danger_hover: Color,  // Brighter danger hover
 
     // Glass effect colors
     pub glass_border: Color, // Subtle glass borders
@@ -45,7 +44,6 @@ impl Default for ColorPalette {
             primary_hover: Color::from_rgb(0.2, 0.6, 1.0), // #3399FF - Bright blue
             primary_light: Color::from_rgba(0.0, 0.48, 1.0, 0.15), // Blue tint
             danger: Color::from_rgb(1.0, 0.27, 0.27), // #FF4444 - Modern red
-            danger_hover: Color::from_rgb(1.0, 0.4, 0.4), // #FF6666 - Bright red
 
             // Glass morphism effects
             glass_border: Color::from_rgba(1.0, 1.0, 1.0, 0.1), // Subtle glass border
@@ -449,53 +447,6 @@ impl button::StyleSheet for SecondaryButton {
 
     fn pressed(&self, style: &Self::Style) -> button::Appearance {
         self.hovered(style)
-    }
-}
-
-// Modern danger button with vibrant red glow
-pub struct DangerButton(pub ColorPalette);
-
-impl button::StyleSheet for DangerButton {
-    type Style = iced::Theme;
-
-    fn active(&self, _: &Self::Style) -> button::Appearance {
-        button::Appearance {
-            background: Some(Background::Color(self.0.danger)),
-            text_color: Color::WHITE,
-            border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: Radius::from(design::BORDER_RADIUS_SMALL),
-            },
-            shadow: Shadow {
-                color: Color::from_rgba(1.0, 0.27, 0.27, 0.4),
-                offset: Vector::new(0.0, 4.0),
-                blur_radius: 16.0,
-            },
-            shadow_offset: Vector::new(0.0, 0.0),
-        }
-    }
-
-    fn hovered(&self, _: &Self::Style) -> button::Appearance {
-        button::Appearance {
-            background: Some(Background::Color(self.0.danger_hover)),
-            text_color: Color::WHITE,
-            border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: Radius::from(design::BORDER_RADIUS_SMALL),
-            },
-            shadow: Shadow {
-                color: Color::from_rgba(1.0, 0.27, 0.27, 0.6),
-                offset: Vector::new(0.0, 6.0),
-                blur_radius: 24.0,
-            },
-            shadow_offset: Vector::new(0.0, 0.0),
-        }
-    }
-
-    fn pressed(&self, style: &Self::Style) -> button::Appearance {
-        self.active(style)
     }
 }
 
