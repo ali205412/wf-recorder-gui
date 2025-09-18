@@ -23,8 +23,8 @@ pub struct ColorPalette {
     pub danger_hover: Color,  // Brighter danger hover
 
     // Glass effect colors
-    pub glass_border: Color,   // Subtle glass borders
-    pub glass_shadow: Color,   // Drop shadows
+    pub glass_border: Color, // Subtle glass borders
+    pub glass_shadow: Color, // Drop shadows
 }
 
 impl Default for ColorPalette {
