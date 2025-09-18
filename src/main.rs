@@ -17,9 +17,21 @@ use recorder::{AudioSource, CaptureRegion, OutputFormat, Recorder, RecordingConf
 use theme::{design, Theme};
 
 fn main() -> Result<()> {
+    // Detect screen size early to set proper initial window size
+    let screen_size = App::detect_screen_size();
+    let scale_factor = design::scale_factor(screen_size.width, screen_size.height);
+
+    // Calculate optimal initial size
+    let initial_size = Size::new(
+        (design::BASE_WINDOW_WIDTH * scale_factor)
+            .clamp(design::MIN_WINDOW_WIDTH, design::MAX_WINDOW_WIDTH),
+        (design::BASE_WINDOW_HEIGHT * scale_factor)
+            .clamp(design::MIN_WINDOW_HEIGHT, design::MAX_WINDOW_HEIGHT),
+    );
+
     App::run(Settings {
         window: iced::window::Settings {
-            size: iced::Size::new(design::BASE_WINDOW_WIDTH, design::BASE_WINDOW_HEIGHT),
+            size: initial_size,
             resizable: true,
             decorations: true,
             transparent: false,
@@ -93,20 +105,23 @@ impl Application for App {
         let screen_size = Self::detect_screen_size();
         let scale_factor = design::scale_factor(screen_size.width, screen_size.height);
 
-        (
-            App {
-                state: AppState::Settings,
-                config,
-                recorder: None,
-                recording_start: None,
-                recording_duration: Duration::default(),
-                theme: Theme::default(),
-                compact_mode: false,
-                screen_size,
-                scale_factor,
-            },
-            Command::none(),
-        )
+        let app = App {
+            state: AppState::Settings,
+            config,
+            recorder: None,
+            recording_start: None,
+            recording_duration: Duration::default(),
+            theme: Theme::default(),
+            compact_mode: false,
+            screen_size,
+            scale_factor,
+        };
+
+        // Ensure window is properly sized on startup
+        let optimal_size = app.get_settings_size();
+        let initial_command = window::resize(window::Id::MAIN, optimal_size);
+
+        (app, initial_command)
     }
 
     fn title(&self) -> String {
@@ -350,7 +365,7 @@ impl Application for App {
 
 impl App {
     // Detect screen size using multiple methods
-    fn detect_screen_size() -> Size {
+    pub fn detect_screen_size() -> Size {
         // Method 1: Check environment variables
         if let (Ok(width), Ok(height)) = (
             std::env::var("SCREEN_WIDTH")
@@ -484,7 +499,7 @@ impl App {
             )
             .width(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(
-                theme::SearchStyle(colors),
+                theme::CardStyle(colors),
             ))),
         );
 
@@ -516,7 +531,7 @@ impl App {
             .padding(container_padding)
             .width(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(
-                theme::SearchStyle(colors),
+                theme::CardStyle(colors),
             ))),
         );
 
@@ -550,7 +565,7 @@ impl App {
                 .padding(container_padding)
                 .width(Length::Fill)
                 .style(iced::theme::Container::Custom(Box::new(
-                    theme::SearchStyle(colors),
+                    theme::CardStyle(colors),
                 ))),
         );
 
@@ -619,7 +634,7 @@ impl App {
                 .center_x()
                 .center_y()
                 .style(iced::theme::Container::Custom(Box::new(
-                    theme::SearchStyle(colors)
+                    theme::CardStyle(colors)
                 ))),
                 Space::with_height(Length::Fixed(design::vertical_space(self.scale_factor))),
                 button(text("Cancel").size(design::button_text_size(self.scale_factor)))
@@ -737,7 +752,7 @@ impl App {
         .height(Length::Fixed(
             design::button_height(self.scale_factor) as f32
         ))
-        .style(iced::theme::Button::Custom(Box::new(theme::RowStyle(
+        .style(iced::theme::Button::Custom(Box::new(theme::OptionCardStyle(
             self.theme.colors,
             is_active,
         ))))
