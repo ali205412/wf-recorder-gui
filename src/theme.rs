@@ -6,64 +6,50 @@ use iced::{Background, Border, Color, Shadow, Vector};
 #[derive(Debug, Clone, Copy)]
 pub struct ColorPalette {
     // Base colors - modern dark theme with glass effects
-    pub background: Color,        // Main app background - deep dark
-    pub surface: Color,           // Glass card backgrounds
-    pub surface_hover: Color,     // Hover states with glow
-    pub surface_active: Color,    // Active/selected states
-    pub surface_elevated: Color,  // Elevated surfaces (modals, dropdowns)
+    pub background: Color,       // Main app background - deep dark
+    pub surface: Color,          // Glass card backgrounds
+    pub surface_hover: Color,    // Hover states with glow
+    pub surface_elevated: Color, // Elevated surfaces (modals, dropdowns)
 
     // Text colors - high contrast for accessibility
-    pub text: Color,              // Primary text - pure white
-    pub text_secondary: Color,    // Secondary text - soft gray
-    pub text_muted: Color,        // Muted text - darker gray
+    pub text: Color,           // Primary text - pure white
+    pub text_secondary: Color, // Secondary text - soft gray
 
     // Modern accent colors
-    pub primary: Color,           // Electric blue primary
-    pub primary_hover: Color,     // Brighter primary hover
-    pub primary_light: Color,     // Light primary variant
-    pub secondary: Color,         // Purple secondary accent
-    pub success: Color,           // Green for positive actions
-    pub warning: Color,           // Amber for warnings
-    pub danger: Color,            // Red for destructive actions
-    pub danger_hover: Color,      // Brighter danger hover
+    pub primary: Color,       // Electric blue primary
+    pub primary_hover: Color, // Brighter primary hover
+    pub primary_light: Color, // Light primary variant
+    pub danger: Color,        // Red for destructive actions
+    pub danger_hover: Color,  // Brighter danger hover
 
     // Glass effect colors
-    pub glass_border: Color,      // Subtle glass borders
-    pub glass_shadow: Color,      // Drop shadows
-    pub gradient_start: Color,    // Gradient backgrounds start
-    pub gradient_end: Color,      // Gradient backgrounds end
+    pub glass_border: Color,   // Subtle glass borders
+    pub glass_shadow: Color,   // Drop shadows
 }
 
 impl Default for ColorPalette {
     fn default() -> Self {
         Self {
             // Modern dark theme with rich colors
-            background: Color::from_rgb(0.05, 0.05, 0.08),      // #0D0D14 - Deep space blue
-            surface: Color::from_rgba(0.1, 0.1, 0.15, 0.8),     // Glass card effect
+            background: Color::from_rgb(0.05, 0.05, 0.08), // #0D0D14 - Deep space blue
+            surface: Color::from_rgba(0.1, 0.1, 0.15, 0.8), // Glass card effect
             surface_hover: Color::from_rgba(0.15, 0.15, 0.2, 0.9), // Glowing hover
-            surface_active: Color::from_rgba(0.2, 0.25, 0.35, 0.95), // Active state
             surface_elevated: Color::from_rgba(0.12, 0.12, 0.18, 0.95), // Elevated surfaces
 
             // High contrast text for accessibility
-            text: Color::from_rgb(0.98, 0.98, 1.0),            // #FAFAFF - Pure white
-            text_secondary: Color::from_rgb(0.7, 0.72, 0.8),   // #B3B8CC - Soft gray
-            text_muted: Color::from_rgb(0.5, 0.52, 0.6),       // #808599 - Muted gray
+            text: Color::from_rgb(0.98, 0.98, 1.0), // #FAFAFF - Pure white
+            text_secondary: Color::from_rgb(0.7, 0.72, 0.8), // #B3B8CC - Soft gray
 
             // Modern vibrant accent colors
-            primary: Color::from_rgb(0.0, 0.48, 1.0),          // #007AFF - Electric blue
-            primary_hover: Color::from_rgb(0.2, 0.6, 1.0),     // #3399FF - Bright blue
+            primary: Color::from_rgb(0.0, 0.48, 1.0), // #007AFF - Electric blue
+            primary_hover: Color::from_rgb(0.2, 0.6, 1.0), // #3399FF - Bright blue
             primary_light: Color::from_rgba(0.0, 0.48, 1.0, 0.15), // Blue tint
-            secondary: Color::from_rgb(0.55, 0.27, 0.95),      // #8B44F2 - Purple accent
-            success: Color::from_rgb(0.0, 0.78, 0.32),         // #00C851 - Modern green
-            warning: Color::from_rgb(1.0, 0.6, 0.0),           // #FF9900 - Amber
-            danger: Color::from_rgb(1.0, 0.27, 0.27),          // #FF4444 - Modern red
-            danger_hover: Color::from_rgb(1.0, 0.4, 0.4),      // #FF6666 - Bright red
+            danger: Color::from_rgb(1.0, 0.27, 0.27), // #FF4444 - Modern red
+            danger_hover: Color::from_rgb(1.0, 0.4, 0.4), // #FF6666 - Bright red
 
             // Glass morphism effects
             glass_border: Color::from_rgba(1.0, 1.0, 1.0, 0.1), // Subtle glass border
             glass_shadow: Color::from_rgba(0.0, 0.0, 0.0, 0.3), // Deep shadows
-            gradient_start: Color::from_rgba(0.0, 0.48, 1.0, 0.1), // Blue gradient start
-            gradient_end: Color::from_rgba(0.55, 0.27, 0.95, 0.1), // Purple gradient end
         }
     }
 }
@@ -99,12 +85,10 @@ pub mod design {
     pub const BASE_ELEMENT_SPACING: u16 = 8;
 
     // Modern border radius - more rounded for glass effect
-    pub const BORDER_RADIUS_SMALL: f32 = 12.0;   // Cards and buttons
-    pub const BORDER_RADIUS_MEDIUM: f32 = 16.0;  // Large cards
-    pub const BORDER_RADIUS_LARGE: f32 = 20.0;   // Modals and dialogs
-    pub const BORDER_RADIUS_TINY: f32 = 6.0;     // Small elements
+    pub const BORDER_RADIUS_SMALL: f32 = 12.0; // Cards and buttons
+    pub const BORDER_RADIUS_LARGE: f32 = 20.0; // Modals and dialogs
     #[allow(dead_code)]
-    pub const BORDER_RADIUS_ROUND: f32 = 50.0;   // Fully rounded elements
+    pub const BORDER_RADIUS_ROUND: f32 = 50.0; // Fully rounded elements
 
     // Button sizing (responsive)
     pub const BASE_BUTTON_HEIGHT: u16 = 56;
@@ -122,14 +106,10 @@ pub mod design {
     #[allow(dead_code)]
     pub const BASE_COMPACT_TEXT_SIZE: u16 = 12;
     pub const BASE_TIMER_TEXT_SIZE: u16 = 18;
-    pub const BASE_COUNTDOWN_SIZE: u16 = 72;
-    pub const BASE_RECORDING_SIZE: u16 = 56;
     pub const COMPACT_COUNTDOWN_SIZE: u16 = 28;
     pub const COMPACT_ICON_SIZE: u16 = 16;
 
     // Container sizes (responsive)
-    pub const BASE_COUNTDOWN_CONTAINER: f32 = 120.0;
-    pub const BASE_VERTICAL_SPACE: f32 = 32.0;
     pub const BASE_SMALL_SPACE: f32 = 8.0;
     pub const BASE_TINY_SPACE: f32 = 4.0;
 
@@ -205,28 +185,16 @@ pub mod design {
     pub fn timer_text_size(scale: f32) -> u16 {
         scaled_size(BASE_TIMER_TEXT_SIZE, scale)
     }
-    pub fn countdown_size(scale: f32) -> u16 {
-        scaled_size(BASE_COUNTDOWN_SIZE, scale)
-    }
-    pub fn recording_size(scale: f32) -> u16 {
-        scaled_size(BASE_RECORDING_SIZE, scale)
-    }
     pub fn compact_countdown_size(scale: f32) -> u16 {
         scaled_size(COMPACT_COUNTDOWN_SIZE, scale)
     }
 
     // Spacing
-    pub fn vertical_space(scale: f32) -> f32 {
-        scaled_f32(BASE_VERTICAL_SPACE, scale)
-    }
     pub fn small_space(scale: f32) -> f32 {
         scaled_f32(BASE_SMALL_SPACE, scale)
     }
     pub fn tiny_space(scale: f32) -> f32 {
         scaled_f32(BASE_TINY_SPACE, scale)
-    }
-    pub fn countdown_container(scale: f32) -> f32 {
-        scaled_f32(BASE_COUNTDOWN_CONTAINER, scale)
     }
 }
 
@@ -300,7 +268,6 @@ impl container::StyleSheet for CardStyle {
 }
 
 // Legacy alias for compatibility
-pub type SearchStyle = CardStyle;
 
 // Modern option card button with glass effect
 pub struct OptionCardStyle(pub ColorPalette, pub bool); // bool for selected state
@@ -390,7 +357,6 @@ impl button::StyleSheet for OptionCardStyle {
 }
 
 // Legacy alias for compatibility
-pub type RowStyle = OptionCardStyle;
 
 // Modern primary button with vibrant gradient and glow
 pub struct PrimaryButton(pub ColorPalette);
