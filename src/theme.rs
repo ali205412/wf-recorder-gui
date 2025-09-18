@@ -48,26 +48,155 @@ impl Default for ColorPalette {
     }
 }
 
-// Onagre-style design constants
+// Dynamic, responsive design constants
 pub mod design {
-    // Exact values from onagre themes
-    pub const WINDOW_PADDING: u16 = 20;
-    pub const CONTAINER_PADDING: u16 = 12;
-    pub const SECTION_SPACING: u16 = 16;
-    pub const BORDER_RADIUS_SMALL: f32 = 8.0; // For buttons
+    // Base reference resolution (1920x1080)
+    pub const REFERENCE_WIDTH: f32 = 1920.0;
+    pub const REFERENCE_HEIGHT: f32 = 1080.0;
 
-    // Row/button sizing
-    pub const BUTTON_HEIGHT: u16 = 56;
-    pub const BUTTON_WIDTH: u16 = 110;
-    pub const BUTTON_PADDING_V: u16 = 16;
-    pub const BUTTON_PADDING_H: u16 = 20;
+    // Scaling limits
+    pub const MIN_SCALE_FACTOR: f32 = 0.7;
+    pub const MAX_SCALE_FACTOR: f32 = 1.5;
+
+    // Window sizing (responsive)
+    pub const BASE_WINDOW_WIDTH: f32 = 420.0;
+    pub const BASE_WINDOW_HEIGHT: f32 = 520.0;
+    pub const MIN_WINDOW_WIDTH: f32 = 320.0;
+    pub const MAX_WINDOW_WIDTH: f32 = 600.0;
+    pub const MIN_WINDOW_HEIGHT: f32 = 400.0;
+    pub const MAX_WINDOW_HEIGHT: f32 = 800.0;
+
+    // Compact window sizing
+    pub const COMPACT_WINDOW_WIDTH: f32 = 180.0;
+    pub const COMPACT_WINDOW_HEIGHT: f32 = 50.0;
+    pub const COMPACT_WINDOW_PADDING: f32 = 20.0;
+
+    // Spacing (responsive)
+    pub const BASE_WINDOW_PADDING: u16 = 20;
+    pub const BASE_CONTAINER_PADDING: u16 = 12;
+    pub const BASE_SECTION_SPACING: u16 = 16;
+    #[allow(dead_code)]
+    pub const BASE_ELEMENT_SPACING: u16 = 8;
+
+    // Border radius
+    pub const BORDER_RADIUS_SMALL: f32 = 8.0;
+    pub const BORDER_RADIUS_TINY: f32 = 4.0;
+    #[allow(dead_code)]
+    pub const BORDER_RADIUS_ROUND: f32 = 25.0;
+
+    // Button sizing (responsive)
+    pub const BASE_BUTTON_HEIGHT: u16 = 56;
+    pub const BASE_BUTTON_WIDTH: u16 = 110;
+    pub const BASE_BUTTON_PADDING_V: u16 = 16;
+    pub const BASE_BUTTON_PADDING_H: u16 = 20;
+    pub const COMPACT_BUTTON_PADDING: u16 = 6;
+
+    // Text sizes (responsive)
+    pub const BASE_TITLE_SIZE: u16 = 24;
+    pub const BASE_SUBTITLE_SIZE: u16 = 14;
+    pub const BASE_LABEL_SIZE: u16 = 11;
+    pub const BASE_BUTTON_TEXT_SIZE: u16 = 14;
+    pub const BASE_INPUT_TEXT_SIZE: u16 = 16;
+    #[allow(dead_code)]
+    pub const BASE_COMPACT_TEXT_SIZE: u16 = 12;
+    pub const BASE_TIMER_TEXT_SIZE: u16 = 18;
+    pub const BASE_COUNTDOWN_SIZE: u16 = 72;
+    pub const BASE_RECORDING_SIZE: u16 = 56;
+    pub const COMPACT_COUNTDOWN_SIZE: u16 = 28;
+    pub const COMPACT_ICON_SIZE: u16 = 16;
+
+    // Container sizes (responsive)
+    pub const BASE_COUNTDOWN_CONTAINER: f32 = 120.0;
+    pub const BASE_VERTICAL_SPACE: f32 = 32.0;
+    pub const BASE_SMALL_SPACE: f32 = 8.0;
+    pub const BASE_TINY_SPACE: f32 = 4.0;
+
+    // Helper functions for responsive sizing
+    pub fn scale_factor(screen_width: f32, screen_height: f32) -> f32 {
+        let width_scale = screen_width / REFERENCE_WIDTH;
+        let height_scale = screen_height / REFERENCE_HEIGHT;
+        width_scale
+            .min(height_scale)
+            .clamp(MIN_SCALE_FACTOR, MAX_SCALE_FACTOR)
+    }
+
+    pub fn scaled_size(base_size: u16, scale: f32) -> u16 {
+        (base_size as f32 * scale).round() as u16
+    }
+
+    pub fn scaled_f32(base_size: f32, scale: f32) -> f32 {
+        base_size * scale
+    }
+
+    // Dynamic constants based on scale factor
+    pub fn window_padding(scale: f32) -> u16 {
+        scaled_size(BASE_WINDOW_PADDING, scale)
+    }
+    pub fn container_padding(scale: f32) -> u16 {
+        scaled_size(BASE_CONTAINER_PADDING, scale)
+    }
+    pub fn section_spacing(scale: f32) -> u16 {
+        scaled_size(BASE_SECTION_SPACING, scale)
+    }
+    pub fn button_height(scale: f32) -> u16 {
+        scaled_size(BASE_BUTTON_HEIGHT, scale)
+    }
+    pub fn button_width(scale: f32) -> u16 {
+        scaled_size(BASE_BUTTON_WIDTH, scale)
+    }
+    pub fn button_padding_v(scale: f32) -> u16 {
+        scaled_size(BASE_BUTTON_PADDING_V, scale)
+    }
+    pub fn button_padding_h(scale: f32) -> u16 {
+        scaled_size(BASE_BUTTON_PADDING_H, scale)
+    }
 
     // Text sizes
-    pub const TITLE_SIZE: u16 = 24;
-    pub const SUBTITLE_SIZE: u16 = 14;
-    pub const LABEL_SIZE: u16 = 11;
-    pub const BUTTON_TEXT_SIZE: u16 = 14;
-    pub const INPUT_TEXT_SIZE: u16 = 16;
+    pub fn title_size(scale: f32) -> u16 {
+        scaled_size(BASE_TITLE_SIZE, scale)
+    }
+    pub fn subtitle_size(scale: f32) -> u16 {
+        scaled_size(BASE_SUBTITLE_SIZE, scale)
+    }
+    pub fn label_size(scale: f32) -> u16 {
+        scaled_size(BASE_LABEL_SIZE, scale)
+    }
+    pub fn button_text_size(scale: f32) -> u16 {
+        scaled_size(BASE_BUTTON_TEXT_SIZE, scale)
+    }
+    pub fn input_text_size(scale: f32) -> u16 {
+        scaled_size(BASE_INPUT_TEXT_SIZE, scale)
+    }
+    #[allow(dead_code)]
+    pub fn compact_text_size(scale: f32) -> u16 {
+        scaled_size(BASE_COMPACT_TEXT_SIZE, scale)
+    }
+    pub fn timer_text_size(scale: f32) -> u16 {
+        scaled_size(BASE_TIMER_TEXT_SIZE, scale)
+    }
+    pub fn countdown_size(scale: f32) -> u16 {
+        scaled_size(BASE_COUNTDOWN_SIZE, scale)
+    }
+    pub fn recording_size(scale: f32) -> u16 {
+        scaled_size(BASE_RECORDING_SIZE, scale)
+    }
+    pub fn compact_countdown_size(scale: f32) -> u16 {
+        scaled_size(COMPACT_COUNTDOWN_SIZE, scale)
+    }
+
+    // Spacing
+    pub fn vertical_space(scale: f32) -> f32 {
+        scaled_f32(BASE_VERTICAL_SPACE, scale)
+    }
+    pub fn small_space(scale: f32) -> f32 {
+        scaled_f32(BASE_SMALL_SPACE, scale)
+    }
+    pub fn tiny_space(scale: f32) -> f32 {
+        scaled_f32(BASE_TINY_SPACE, scale)
+    }
+    pub fn countdown_container(scale: f32) -> f32 {
+        scaled_f32(BASE_COUNTDOWN_CONTAINER, scale)
+    }
 }
 
 #[derive(Default)]
@@ -284,11 +413,119 @@ impl button::StyleSheet for DangerButton {
         }
     }
 
-    fn hovered(&self, style: &Self::Style) -> button::Appearance {
-        self.active(style)
+    fn hovered(&self, _: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: Some(Background::Color(Color::from_rgb(1.0, 0.32, 0.24))), // Lighter red
+            text_color: Color::WHITE,
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: Radius::from(design::BORDER_RADIUS_SMALL),
+            },
+            shadow: Shadow::default(),
+            shadow_offset: Vector::new(0.0, 0.0),
+        }
     }
 
     fn pressed(&self, style: &Self::Style) -> button::Appearance {
         self.active(style)
+    }
+}
+
+// Compact container style - minimal padding and rounded corners for small UI
+pub struct CompactStyle(pub ColorPalette);
+
+impl container::StyleSheet for CompactStyle {
+    type Style = iced::Theme;
+
+    fn appearance(&self, _: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: Some(Background::Color(Color::from_rgba(
+                self.0.surface.r,
+                self.0.surface.g,
+                self.0.surface.b,
+                0.95, // Slightly transparent
+            ))),
+            text_color: Some(self.0.text),
+            border: Border {
+                color: self.0.border,
+                width: 1.0,
+                radius: Radius::from(design::BORDER_RADIUS_TINY),
+            },
+            shadow: Shadow {
+                color: Color::from_rgba(0.0, 0.0, 0.0, 0.3),
+                offset: Vector::new(0.0, 2.0),
+                blur_radius: 8.0,
+            },
+        }
+    }
+}
+
+// Compact button style - tiny buttons for minimal UI
+pub struct CompactButton(pub ColorPalette);
+
+impl button::StyleSheet for CompactButton {
+    type Style = iced::Theme;
+
+    fn active(&self, _: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: Some(Background::Color(Color::from_rgba(
+                self.0.danger.r,
+                self.0.danger.g,
+                self.0.danger.b,
+                0.8,
+            ))),
+            text_color: Color::WHITE,
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: Radius::from(design::BORDER_RADIUS_TINY),
+            },
+            shadow: Shadow::default(),
+            shadow_offset: Vector::new(0.0, 0.0),
+        }
+    }
+
+    fn hovered(&self, _: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: Some(Background::Color(self.0.danger)),
+            text_color: Color::WHITE,
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: Radius::from(design::BORDER_RADIUS_TINY),
+            },
+            shadow: Shadow::default(),
+            shadow_offset: Vector::new(0.0, 0.0),
+        }
+    }
+
+    fn pressed(&self, style: &Self::Style) -> button::Appearance {
+        self.hovered(style)
+    }
+}
+
+// Recording indicator style - pulsing red dot effect
+pub struct RecordingIndicator(pub ColorPalette);
+
+impl container::StyleSheet for RecordingIndicator {
+    type Style = iced::Theme;
+
+    fn appearance(&self, _: &Self::Style) -> container::Appearance {
+        container::Appearance {
+            background: Some(Background::Color(Color::from_rgba(
+                self.0.danger.r,
+                self.0.danger.g,
+                self.0.danger.b,
+                0.1, // Very subtle background
+            ))),
+            text_color: Some(self.0.text),
+            border: Border {
+                color: Color::from_rgba(self.0.danger.r, self.0.danger.g, self.0.danger.b, 0.3),
+                width: 1.0,
+                radius: Radius::from(25.0), // Rounded like a pill
+            },
+            shadow: Shadow::default(),
+        }
     }
 }
