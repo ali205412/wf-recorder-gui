@@ -79,12 +79,12 @@ pub mod design {
     pub const MAX_SCALE_FACTOR: f32 = 1.5;
 
     // Window sizing (responsive)
-    pub const BASE_WINDOW_WIDTH: f32 = 420.0;
-    pub const BASE_WINDOW_HEIGHT: f32 = 520.0;
-    pub const MIN_WINDOW_WIDTH: f32 = 320.0;
-    pub const MAX_WINDOW_WIDTH: f32 = 600.0;
-    pub const MIN_WINDOW_HEIGHT: f32 = 400.0;
-    pub const MAX_WINDOW_HEIGHT: f32 = 800.0;
+    pub const BASE_WINDOW_WIDTH: f32 = 480.0;
+    pub const BASE_WINDOW_HEIGHT: f32 = 640.0;
+    pub const MIN_WINDOW_WIDTH: f32 = 400.0;
+    pub const MAX_WINDOW_WIDTH: f32 = 700.0;
+    pub const MIN_WINDOW_HEIGHT: f32 = 520.0;
+    pub const MAX_WINDOW_HEIGHT: f32 = 900.0;
 
     // Compact window sizing
     pub const COMPACT_WINDOW_WIDTH: f32 = 180.0;
@@ -137,9 +137,18 @@ pub mod design {
     pub fn scale_factor(screen_width: f32, screen_height: f32) -> f32 {
         let width_scale = screen_width / REFERENCE_WIDTH;
         let height_scale = screen_height / REFERENCE_HEIGHT;
-        width_scale
-            .min(height_scale)
-            .clamp(MIN_SCALE_FACTOR, MAX_SCALE_FACTOR)
+
+        // Use the minimum scale but ensure it's not too small for usability
+        let base_scale = width_scale.min(height_scale);
+
+        // For smaller screens, use a slightly higher minimum to ensure UI is usable
+        let adjusted_min = if screen_width < 1600.0 || screen_height < 900.0 {
+            0.85
+        } else {
+            MIN_SCALE_FACTOR
+        };
+
+        base_scale.clamp(adjusted_min, MAX_SCALE_FACTOR)
     }
 
     pub fn scaled_size(base_size: u16, scale: f32) -> u16 {
