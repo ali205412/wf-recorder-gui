@@ -452,9 +452,9 @@ impl App {
                 .text_size(design::input_text_size(self.scale_factor)),
             )
             .width(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(
-                theme::CardStyle(colors),
-            ))),
+            .style(iced::theme::Container::Custom(Box::new(theme::CardStyle(
+                colors,
+            )))),
         );
 
         // Save location
@@ -484,11 +484,10 @@ impl App {
             )
             .padding(container_padding)
             .width(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(
-                theme::CardStyle(colors),
-            ))),
+            .style(iced::theme::Container::Custom(Box::new(theme::CardStyle(
+                colors,
+            )))),
         );
-
 
         // Record button - primary action
         let record_button = button(
@@ -526,8 +525,6 @@ impl App {
         )))
         .into()
     }
-
-
 
     // Helper to create sections with labels
     fn create_section<'a>(
@@ -570,10 +567,9 @@ impl App {
         .height(Length::Fixed(
             design::button_height(self.scale_factor) as f32
         ))
-        .style(iced::theme::Button::Custom(Box::new(theme::OptionCardStyle(
-            self.theme.colors,
-            is_active,
-        ))))
+        .style(iced::theme::Button::Custom(Box::new(
+            theme::OptionCardStyle(self.theme.colors, is_active),
+        )))
         .into()
     }
 
