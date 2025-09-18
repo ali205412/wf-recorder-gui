@@ -6,7 +6,8 @@ mod theme;
 use anyhow::Result;
 use iced::widget::{button, column, container, pick_list, row, text, Space};
 use iced::{
-    alignment, executor, Application, Command, Element, Font, Length, Settings, Theme as IcedTheme,
+    alignment, executor, window, Application, Command, Element, Font, Length, Point, Settings,
+    Size, Theme as IcedTheme,
 };
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -18,10 +19,18 @@ use theme::{design, Theme};
 fn main() -> Result<()> {
     App::run(Settings {
         window: iced::window::Settings {
-            size: iced::Size::new(420.0, 520.0), // Onagre-like size
-            resizable: false,
+            size: iced::Size::new(design::BASE_WINDOW_WIDTH, design::BASE_WINDOW_HEIGHT),
+            resizable: true,
             decorations: true,
             transparent: false,
+            min_size: Some(iced::Size::new(
+                design::MIN_WINDOW_WIDTH,
+                design::MIN_WINDOW_HEIGHT,
+            )),
+            max_size: Some(iced::Size::new(
+                design::MAX_WINDOW_WIDTH,
+                design::MAX_WINDOW_HEIGHT,
+            )),
             ..Default::default()
         },
         antialiasing: true,
@@ -41,6 +50,13 @@ enum Message {
     StartRecording,
     StopRecording,
     Tick,
+    #[allow(dead_code)]
+    ResizeWindow(Size),
+    #[allow(dead_code)]
+    PositionWindow(Point),
+    #[allow(dead_code)]
+    MinimizeWindow,
+    ToggleCompactMode,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -48,6 +64,8 @@ enum AppState {
     Settings,
     Countdown(u8),
     Recording,
+    CompactCountdown(u8),
+    CompactRecording,
 }
 
 struct App {
@@ -57,6 +75,9 @@ struct App {
     recording_start: Option<Instant>,
     recording_duration: Duration,
     theme: Theme,
+    compact_mode: bool,
+    screen_size: Size,
+    scale_factor: f32,
 }
 
 impl Application for App {
@@ -68,6 +89,10 @@ impl Application for App {
     fn new(_flags: ()) -> (Self, Command<Message>) {
         let config = Config::load().unwrap_or_default();
 
+        // Try to get actual screen size, fallback to safe default
+        let screen_size = Self::detect_screen_size();
+        let scale_factor = design::scale_factor(screen_size.width, screen_size.height);
+
         (
             App {
                 state: AppState::Settings,
@@ -76,6 +101,9 @@ impl Application for App {
                 recording_start: None,
                 recording_duration: Duration::default(),
                 theme: Theme::default(),
+                compact_mode: false,
+                screen_size,
+                scale_factor,
             },
             Command::none(),
         )
@@ -144,8 +172,12 @@ impl Application for App {
 
                 let _recorder = Recorder::new(recording_config.clone());
 
-                // Start countdown
-                self.state = AppState::Countdown(3);
+                // Start countdown - use compact mode if enabled
+                self.state = if self.compact_mode {
+                    AppState::CompactCountdown(3)
+                } else {
+                    AppState::Countdown(3)
+                };
 
                 // Handle region selection vs fullscreen
                 let delay = match recording_config.region {
@@ -153,12 +185,28 @@ impl Application for App {
                     CaptureRegion::FullScreen => 1000,
                 };
 
-                Command::perform(
-                    async move {
-                        tokio::time::sleep(Duration::from_millis(delay)).await;
-                    },
-                    |_| Message::Tick,
-                )
+                if self.compact_mode {
+                    let compact_size = self.get_compact_size();
+                    let position = self.get_compact_position();
+
+                    Command::batch([
+                        window::resize(window::Id::MAIN, compact_size),
+                        window::move_to(window::Id::MAIN, position),
+                        Command::perform(
+                            async move {
+                                tokio::time::sleep(Duration::from_millis(delay)).await;
+                            },
+                            |_| Message::Tick,
+                        ),
+                    ])
+                } else {
+                    Command::perform(
+                        async move {
+                            tokio::time::sleep(Duration::from_millis(delay)).await;
+                        },
+                        |_| Message::Tick,
+                    )
+                }
             }
             Message::StopRecording => {
                 if let Some(recorder) = &mut self.recorder {
@@ -168,13 +216,27 @@ impl Application for App {
                 self.state = AppState::Settings;
                 self.recording_start = None;
                 self.recording_duration = Duration::default();
-                Command::none()
+
+                // Return to normal settings window size and center
+                let settings_size = self.get_settings_size();
+                let center_position = self.get_center_position(settings_size);
+
+                Command::batch([
+                    window::resize(window::Id::MAIN, settings_size),
+                    window::move_to(window::Id::MAIN, center_position),
+                ])
             }
             Message::Tick => {
                 match self.state {
-                    AppState::Countdown(count) => {
+                    AppState::Countdown(count) | AppState::CompactCountdown(count) => {
                         if count > 1 {
-                            self.state = AppState::Countdown(count - 1);
+                            self.state = match self.state {
+                                AppState::Countdown(_) => AppState::Countdown(count - 1),
+                                AppState::CompactCountdown(_) => {
+                                    AppState::CompactCountdown(count - 1)
+                                }
+                                _ => unreachable!(),
+                            };
                             Command::perform(
                                 async {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -194,10 +256,19 @@ impl Application for App {
                             if let Err(e) = recorder.start() {
                                 eprintln!("Failed to start recording: {e}");
                                 self.state = AppState::Settings;
-                                Command::none()
+                                let settings_size = self.get_settings_size();
+                                let center_position = self.get_center_position(settings_size);
+                                Command::batch([
+                                    window::resize(window::Id::MAIN, settings_size),
+                                    window::move_to(window::Id::MAIN, center_position),
+                                ])
                             } else {
                                 self.recorder = Some(recorder);
-                                self.state = AppState::Recording;
+                                self.state = if self.compact_mode {
+                                    AppState::CompactRecording
+                                } else {
+                                    AppState::Recording
+                                };
                                 self.recording_start = Some(Instant::now());
 
                                 // Start timer updates
@@ -210,7 +281,7 @@ impl Application for App {
                             }
                         }
                     }
-                    AppState::Recording => {
+                    AppState::Recording | AppState::CompactRecording => {
                         if let Some(start) = self.recording_start {
                             self.recording_duration = start.elapsed();
                         }
@@ -224,6 +295,27 @@ impl Application for App {
                     AppState::Settings => Command::none(),
                 }
             }
+            Message::ResizeWindow(size) => window::resize(window::Id::MAIN, size),
+            Message::PositionWindow(position) => window::move_to(window::Id::MAIN, position),
+            Message::MinimizeWindow => window::minimize(window::Id::MAIN, true),
+            Message::ToggleCompactMode => {
+                self.compact_mode = !self.compact_mode;
+                if self.compact_mode {
+                    let compact_size = self.get_compact_size();
+                    let position = self.get_compact_position();
+                    Command::batch([
+                        window::resize(window::Id::MAIN, compact_size),
+                        window::move_to(window::Id::MAIN, position),
+                    ])
+                } else {
+                    let settings_size = self.get_settings_size();
+                    let center_position = self.get_center_position(settings_size);
+                    Command::batch([
+                        window::resize(window::Id::MAIN, settings_size),
+                        window::move_to(window::Id::MAIN, center_position),
+                    ])
+                }
+            }
         }
     }
 
@@ -232,13 +324,23 @@ impl Application for App {
             AppState::Settings => self.view_settings(),
             AppState::Countdown(count) => self.view_countdown(count),
             AppState::Recording => self.view_recording(),
+            AppState::CompactCountdown(count) => self.view_compact_countdown(count),
+            AppState::CompactRecording => self.view_compact_recording(),
         };
 
-        // Main window container with onagre-style padding
+        // Dynamic window padding based on scale factor and mode
+        let padding = match self.state {
+            AppState::CompactCountdown(_) | AppState::CompactRecording => {
+                design::COMPACT_BUTTON_PADDING
+            }
+            _ => design::window_padding(self.scale_factor),
+        };
+
+        // Main window container with responsive padding
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(design::WINDOW_PADDING)
+            .padding(padding)
             .style(iced::theme::Container::Custom(Box::new(
                 theme::WindowStyle(self.theme.colors),
             )))
@@ -247,32 +349,82 @@ impl Application for App {
 }
 
 impl App {
+    // Detect screen size using multiple methods
+    fn detect_screen_size() -> Size {
+        // Method 1: Check environment variables
+        if let (Ok(width), Ok(height)) = (
+            std::env::var("SCREEN_WIDTH")
+                .and_then(|w| w.parse::<f32>().map_err(|_| std::env::VarError::NotPresent)),
+            std::env::var("SCREEN_HEIGHT")
+                .and_then(|h| h.parse::<f32>().map_err(|_| std::env::VarError::NotPresent)),
+        ) {
+            return Size::new(width, height);
+        }
+
+        // Method 2: Try xrandr on Linux (common case)
+        if let Ok(output) = std::process::Command::new("xrandr")
+            .arg("--current")
+            .output()
+        {
+            if let Ok(output_str) = String::from_utf8(output.stdout) {
+                // Parse xrandr output for primary display
+                for line in output_str.lines() {
+                    if line.contains("primary") || line.contains("*") {
+                        if let Some(resolution) = line.split_whitespace().find(|s| {
+                            s.contains("x") && s.chars().next().unwrap_or(' ').is_ascii_digit()
+                        }) {
+                            let parts: Vec<&str> = resolution.split('x').collect();
+                            if parts.len() == 2 {
+                                if let (Ok(w), Ok(h)) =
+                                    (parts[0].parse::<f32>(), parts[1].parse::<f32>())
+                                {
+                                    return Size::new(w, h);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Method 3: Common screen size detection based on typical resolutions
+        // This could be expanded with more platform-specific code
+
+        // Default fallback - use reference resolution
+        Size::new(design::REFERENCE_WIDTH, design::REFERENCE_HEIGHT)
+    }
     fn view_settings(&self) -> Element<Message> {
         let colors = self.theme.colors;
 
-        // Title with subtitle - like onagre's search bar
+        // Dynamic sizes based on scale factor
+        let title_size = design::title_size(self.scale_factor);
+        let subtitle_size = design::subtitle_size(self.scale_factor);
+        let section_spacing = design::section_spacing(self.scale_factor);
+        let container_padding = design::container_padding(self.scale_factor);
+
+        // Title with subtitle - responsive sizing
         let title_section = container(
             column![
                 text("WF Recorder")
-                    .size(design::TITLE_SIZE)
+                    .size(title_size)
                     .font(Font {
                         weight: iced::font::Weight::Bold,
                         ..Default::default()
                     })
                     .style(iced::theme::Text::Color(colors.text)),
                 text(format!("{} • 30FPS", self.config.format))
-                    .size(design::SUBTITLE_SIZE)
+                    .size(subtitle_size)
                     .style(iced::theme::Text::Color(colors.text_secondary)),
             ]
-            .spacing(4),
+            .spacing(design::tiny_space(self.scale_factor) as u16),
         )
         .width(Length::Fill)
-        .padding([0, 0, design::SECTION_SPACING, 0])
+        .padding([0, 0, section_spacing, 0])
         .style(iced::theme::Container::Custom(Box::new(
             theme::ContainerStyle(colors),
         )));
 
-        // Capture mode buttons - like onagre's rows
+        // Capture mode buttons - responsive spacing
         let capture_buttons = row![
             self.create_option_button(
                 "🖥",
@@ -280,7 +432,7 @@ impl App {
                 matches!(self.config.region, CaptureRegion::FullScreen),
                 Message::ToggleRegion(true),
             ),
-            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            Space::with_width(Length::Fixed(container_padding as f32)),
             self.create_option_button(
                 "◰",
                 "Region",
@@ -299,14 +451,14 @@ impl App {
                 matches!(self.config.audio, AudioSource::System),
                 Message::ToggleAudio(AudioSource::System),
             ),
-            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            Space::with_width(Length::Fixed(container_padding as f32)),
             self.create_option_button(
                 "🎤",
                 "Mic",
                 matches!(self.config.audio, AudioSource::Microphone),
                 Message::ToggleAudio(AudioSource::Microphone),
             ),
-            Space::with_width(Length::Fixed(design::CONTAINER_PADDING as f32)),
+            Space::with_width(Length::Fixed(container_padding as f32)),
             self.create_option_button(
                 "🔇",
                 "None",
@@ -326,9 +478,9 @@ impl App {
                     Some(self.config.format),
                     Message::FormatSelected,
                 )
-                .padding([design::CONTAINER_PADDING, design::CONTAINER_PADDING])
+                .padding([container_padding, container_padding])
                 .width(Length::Fill)
-                .text_size(design::INPUT_TEXT_SIZE),
+                .text_size(design::input_text_size(self.scale_factor)),
             )
             .width(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(
@@ -349,10 +501,10 @@ impl App {
             container(
                 row![
                     text(folder_display)
-                        .size(design::BUTTON_TEXT_SIZE)
+                        .size(design::button_text_size(self.scale_factor))
                         .style(iced::theme::Text::Color(colors.text_secondary)),
                     Space::with_width(Length::Fill),
-                    button(text("Browse").size(design::BUTTON_TEXT_SIZE))
+                    button(text("Browse").size(design::button_text_size(self.scale_factor)))
                         .on_press(Message::BrowseFolder)
                         .padding([8, 16])
                         .style(iced::theme::Button::Custom(Box::new(
@@ -361,21 +513,58 @@ impl App {
                 ]
                 .align_items(alignment::Alignment::Center),
             )
-            .padding(design::CONTAINER_PADDING)
+            .padding(container_padding)
             .width(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(
                 theme::SearchStyle(colors),
             ))),
         );
 
+        // Compact mode toggle
+        let compact_toggle = row![
+            text("Compact Recording Mode")
+                .size(design::button_text_size(self.scale_factor))
+                .style(iced::theme::Text::Color(colors.text)),
+            Space::with_width(Length::Fill),
+            if self.compact_mode {
+                button(text("ON").size(design::button_text_size(self.scale_factor)))
+                    .on_press(Message::ToggleCompactMode)
+                    .padding([6, 12])
+                    .style(iced::theme::Button::Custom(Box::new(theme::PrimaryButton(
+                        colors,
+                    ))))
+            } else {
+                button(text("OFF").size(design::button_text_size(self.scale_factor)))
+                    .on_press(Message::ToggleCompactMode)
+                    .padding([6, 12])
+                    .style(iced::theme::Button::Custom(Box::new(
+                        theme::SecondaryButton(colors),
+                    )))
+            },
+        ]
+        .align_items(alignment::Alignment::Center);
+
+        let compact_section = self.create_section(
+            "RECORDING MODE",
+            container(compact_toggle)
+                .padding(container_padding)
+                .width(Length::Fill)
+                .style(iced::theme::Container::Custom(Box::new(
+                    theme::SearchStyle(colors),
+                ))),
+        );
+
         // Record button - primary action
         let record_button = button(
             text("Start Recording")
-                .size(design::INPUT_TEXT_SIZE)
+                .size(design::input_text_size(self.scale_factor))
                 .horizontal_alignment(alignment::Horizontal::Center),
         )
         .on_press(Message::StartRecording)
-        .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+        .padding([
+            design::button_padding_v(self.scale_factor),
+            design::button_padding_h(self.scale_factor),
+        ])
         .width(Length::Fill)
         .style(iced::theme::Button::Custom(Box::new(theme::PrimaryButton(
             colors,
@@ -389,10 +578,11 @@ impl App {
                 audio_section,
                 format_section,
                 location_section,
+                compact_section,
                 Space::with_height(Length::Fill), // Push button to bottom
                 record_button,
             ]
-            .spacing(design::SECTION_SPACING),
+            .spacing(section_spacing),
         )
         .width(Length::Fill)
         .height(Length::Fill)
@@ -408,29 +598,36 @@ impl App {
         container(
             column![
                 text("Recording in...")
-                    .size(design::SUBTITLE_SIZE)
+                    .size(design::subtitle_size(self.scale_factor))
                     .style(iced::theme::Text::Color(colors.text_secondary)),
-                Space::with_height(Length::Fixed(32.0)),
+                Space::with_height(Length::Fixed(design::vertical_space(self.scale_factor))),
                 container(
                     text(count.to_string())
-                        .size(72)
+                        .size(design::countdown_size(self.scale_factor))
                         .font(Font {
                             weight: iced::font::Weight::Bold,
                             ..Default::default()
                         })
                         .style(iced::theme::Text::Color(colors.primary))
                 )
-                .width(Length::Fixed(120.0))
-                .height(Length::Fixed(120.0))
+                .width(Length::Fixed(design::countdown_container(
+                    self.scale_factor
+                )))
+                .height(Length::Fixed(design::countdown_container(
+                    self.scale_factor
+                )))
                 .center_x()
                 .center_y()
                 .style(iced::theme::Container::Custom(Box::new(
                     theme::SearchStyle(colors)
                 ))),
-                Space::with_height(Length::Fixed(32.0)),
-                button(text("Cancel").size(design::BUTTON_TEXT_SIZE))
+                Space::with_height(Length::Fixed(design::vertical_space(self.scale_factor))),
+                button(text("Cancel").size(design::button_text_size(self.scale_factor)))
                     .on_press(Message::StopRecording)
-                    .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+                    .padding([
+                        design::button_padding_v(self.scale_factor),
+                        design::button_padding_h(self.scale_factor)
+                    ])
                     .style(iced::theme::Button::Custom(Box::new(theme::DangerButton(
                         colors
                     )))),
@@ -460,25 +657,28 @@ impl App {
                     text("⏸")
                         .size(20)
                         .style(iced::theme::Text::Color(colors.danger)),
-                    Space::with_width(Length::Fixed(8.0)),
+                    Space::with_width(Length::Fixed(design::small_space(self.scale_factor))),
                     text("Recording")
-                        .size(design::SUBTITLE_SIZE)
+                        .size(design::subtitle_size(self.scale_factor))
                         .style(iced::theme::Text::Color(colors.text)),
                 ]
                 .align_items(alignment::Alignment::Center),
-                Space::with_height(Length::Fixed(32.0)),
+                Space::with_height(Length::Fixed(design::vertical_space(self.scale_factor))),
                 text(time_text)
-                    .size(56)
+                    .size(design::recording_size(self.scale_factor))
                     .font(Font {
                         family: iced::font::Family::Monospace,
                         weight: iced::font::Weight::Light,
                         ..Default::default()
                     })
                     .style(iced::theme::Text::Color(colors.text)),
-                Space::with_height(Length::Fixed(32.0)),
-                button(text("Stop Recording").size(design::BUTTON_TEXT_SIZE))
+                Space::with_height(Length::Fixed(design::vertical_space(self.scale_factor))),
+                button(text("Stop Recording").size(design::button_text_size(self.scale_factor)))
                     .on_press(Message::StopRecording)
-                    .padding([design::BUTTON_PADDING_V, design::BUTTON_PADDING_H])
+                    .padding([
+                        design::button_padding_v(self.scale_factor),
+                        design::button_padding_h(self.scale_factor)
+                    ])
                     .style(iced::theme::Button::Custom(Box::new(theme::DangerButton(
                         colors
                     )))),
@@ -504,9 +704,9 @@ impl App {
     ) -> Element<'a, Message> {
         column![
             text(label)
-                .size(design::LABEL_SIZE)
+                .size(design::label_size(self.scale_factor))
                 .style(iced::theme::Text::Color(self.theme.colors.text_secondary)),
-            Space::with_height(Length::Fixed(8.0)),
+            Space::with_height(Length::Fixed(design::small_space(self.scale_factor))),
             content.into(),
         ]
         .spacing(0)
@@ -523,23 +723,138 @@ impl App {
     ) -> Element<Message> {
         button(
             column![
-                text(icon).size(24), // Fixed icon size
-                Space::with_height(Length::Fixed(4.0)),
-                text(label).size(design::BUTTON_TEXT_SIZE)
+                text(icon).size(24), // Keep icon size fixed for consistency
+                Space::with_height(Length::Fixed(design::tiny_space(self.scale_factor))),
+                text(label).size(design::button_text_size(self.scale_factor))
             ]
             .spacing(0)
             .align_items(alignment::Alignment::Center)
-            .width(Length::Fixed(design::BUTTON_WIDTH as f32)),
+            .width(Length::Fixed(design::button_width(self.scale_factor) as f32)),
         )
         .on_press(message)
-        .padding([design::BUTTON_PADDING_V, 0]) // Vertical padding only
-        .width(Length::Fixed(design::BUTTON_WIDTH as f32))
-        .height(Length::Fixed(design::BUTTON_HEIGHT as f32))
+        .padding([design::button_padding_v(self.scale_factor), 0]) // Vertical padding only
+        .width(Length::Fixed(design::button_width(self.scale_factor) as f32))
+        .height(Length::Fixed(
+            design::button_height(self.scale_factor) as f32
+        ))
         .style(iced::theme::Button::Custom(Box::new(theme::RowStyle(
             self.theme.colors,
             is_active,
         ))))
         .into()
+    }
+
+    // Compact countdown view - minimal UI for recording
+    fn view_compact_countdown(&self, count: u8) -> Element<Message> {
+        let colors = self.theme.colors;
+
+        container(
+            row![
+                text(count.to_string())
+                    .size(design::compact_countdown_size(self.scale_factor))
+                    .font(Font {
+                        weight: iced::font::Weight::Bold,
+                        ..Default::default()
+                    })
+                    .style(iced::theme::Text::Color(colors.primary)),
+                Space::with_width(Length::Fixed(design::small_space(self.scale_factor))),
+                button(text("✕").size(design::COMPACT_ICON_SIZE))
+                    .on_press(Message::StopRecording)
+                    .padding(design::COMPACT_BUTTON_PADDING)
+                    .style(iced::theme::Button::Custom(Box::new(theme::CompactButton(
+                        colors
+                    )))),
+            ]
+            .align_items(alignment::Alignment::Center),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y()
+        .padding(design::COMPACT_BUTTON_PADDING)
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::CompactStyle(colors),
+        )))
+        .into()
+    }
+
+    // Compact recording view - minimal recording indicator
+    fn view_compact_recording(&self) -> Element<Message> {
+        let colors = self.theme.colors;
+        let minutes = self.recording_duration.as_secs() / 60;
+        let seconds = self.recording_duration.as_secs() % 60;
+        let time_text = format!("{minutes:02}:{seconds:02}");
+
+        container(
+            row![
+                text("●")
+                    .size(design::COMPACT_ICON_SIZE)
+                    .style(iced::theme::Text::Color(colors.danger)),
+                Space::with_width(Length::Fixed(design::small_space(self.scale_factor))),
+                text(time_text)
+                    .size(design::timer_text_size(self.scale_factor))
+                    .font(Font {
+                        family: iced::font::Family::Monospace,
+                        weight: iced::font::Weight::Medium,
+                        ..Default::default()
+                    })
+                    .style(iced::theme::Text::Color(colors.text)),
+                Space::with_width(Length::Fixed(design::small_space(self.scale_factor))),
+                button(text("⏹").size(design::COMPACT_ICON_SIZE))
+                    .on_press(Message::StopRecording)
+                    .padding(design::COMPACT_BUTTON_PADDING)
+                    .style(iced::theme::Button::Custom(Box::new(theme::CompactButton(
+                        colors
+                    )))),
+            ]
+            .align_items(alignment::Alignment::Center),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .center_y()
+        .padding(design::COMPACT_BUTTON_PADDING)
+        .style(iced::theme::Container::Custom(Box::new(
+            theme::RecordingIndicator(colors),
+        )))
+        .into()
+    }
+
+    // Helper methods for window sizing and positioning
+    fn get_settings_size(&self) -> Size {
+        Size::new(
+            (design::BASE_WINDOW_WIDTH * self.scale_factor)
+                .clamp(design::MIN_WINDOW_WIDTH, design::MAX_WINDOW_WIDTH),
+            (design::BASE_WINDOW_HEIGHT * self.scale_factor)
+                .clamp(design::MIN_WINDOW_HEIGHT, design::MAX_WINDOW_HEIGHT),
+        )
+    }
+
+    fn get_compact_size(&self) -> Size {
+        // Scale compact window slightly for very high DPI displays
+        let compact_scale = self.scale_factor.max(1.0);
+        Size::new(
+            design::COMPACT_WINDOW_WIDTH * compact_scale,
+            design::COMPACT_WINDOW_HEIGHT * compact_scale,
+        )
+    }
+
+    fn get_compact_position(&self) -> Point {
+        let compact_size = self.get_compact_size();
+        let padding = design::COMPACT_WINDOW_PADDING * self.scale_factor;
+
+        // Ensure the window stays within screen bounds
+        let x = (self.screen_size.width - compact_size.width - padding).max(0.0);
+        let y = padding;
+
+        Point::new(x, y)
+    }
+
+    fn get_center_position(&self, window_size: Size) -> Point {
+        let x = ((self.screen_size.width - window_size.width) / 2.0).max(0.0);
+        let y = ((self.screen_size.height - window_size.height) / 2.0).max(0.0);
+
+        Point::new(x, y)
     }
 }
 
